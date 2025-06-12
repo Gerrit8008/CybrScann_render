@@ -6,6 +6,19 @@
     <title>Lead Management - CybrScan MSP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        .btn-group .btn {
+            margin-right: 2px;
+        }
+        .btn-group .btn:last-child {
+            margin-right: 0;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -120,6 +133,9 @@
                                         <td>
                                             {{ lead.contact }}<br>
                                             <small class="text-muted">{{ lead.email }}</small>
+                                            {% if lead.phone %}
+                                            <br><small class="text-muted">{{ lead.phone }}</small>
+                                            {% endif %}
                                         </td>
                                         <td>{{ lead.scanner_used }}</td>
                                         <td>
@@ -138,8 +154,30 @@
                                         </td>
                                         <td>
                                             <div class="btn-group">
-                                                <button class="btn btn-sm btn-outline-primary">Contact</button>
-                                                <button class="btn btn-sm btn-outline-secondary">View</button>
+                                                {% if lead.phone %}
+                                                <a href="tel:{{ lead.phone }}" class="btn btn-sm btn-outline-primary" title="Call {{ lead.phone }}">
+                                                    <i class="bi bi-telephone"></i> Contact
+                                                </a>
+                                                {% else %}
+                                                <button class="btn btn-sm btn-outline-primary" disabled title="No phone number available">
+                                                    <i class="bi bi-telephone"></i> Contact
+                                                </button>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-secondary" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#leadModal" 
+                                                        onclick="showLeadDetails('{{ lead.id }}', '{{ lead.company }}', '{{ lead.contact }}', '{{ lead.email }}', '{{ lead.phone or '' }}', '{{ lead.domain }}', '{{ lead.scanner_used }}', '{{ lead.risk_score }}', '{{ lead.lead_score }}', '{{ lead.estimated_value }}', '{{ lead.status }}', '{{ lead.date_generated }}', '{{ lead.vulnerabilities_found }}')">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
+                                                {% if lead.report_url %}
+                                                <a href="{{ lead.report_url }}" class="btn btn-sm btn-outline-success" target="_blank" title="View scan report">
+                                                    <i class="bi bi-file-earmark-text"></i> Report
+                                                </a>
+                                                {% else %}
+                                                <button class="btn btn-sm btn-outline-success" disabled title="No report available">
+                                                    <i class="bi bi-file-earmark-text"></i> Report
+                                                </button>
+                                                {% endif %}
                                             </div>
                                         </td>
                                     </tr>
@@ -152,5 +190,150 @@
             </div>
         </div>
     </div>
+
+    <!-- Lead Details Modal -->
+    <div class="modal fade" id="leadModal" tabindex="-1" aria-labelledby="leadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leadModalLabel">Lead Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Company Information</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Company:</strong></td>
+                                    <td id="modal-company"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Domain:</strong></td>
+                                    <td id="modal-domain"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Date Generated:</strong></td>
+                                    <td id="modal-date"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td><span id="modal-status" class="badge bg-primary"></span></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Contact Information</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Contact:</strong></td>
+                                    <td id="modal-contact"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td><a id="modal-email" href=""></a></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Phone:</strong></td>
+                                    <td><a id="modal-phone" href=""></a></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Scanner Used:</strong></td>
+                                    <td id="modal-scanner"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3 id="modal-risk-score" class="text-warning">0%</h3>
+                                <p class="mb-0">Risk Score</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3 id="modal-lead-score" class="text-info">Cold</h3>
+                                <p class="mb-0">Lead Score</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3 id="modal-estimated-value" class="text-success">$0</h3>
+                                <p class="mb-0">Estimated Value</p>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="fw-bold">Security Assessment</h6>
+                            <p>Number of vulnerabilities found: <span id="modal-vulnerabilities" class="badge bg-danger">0</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a id="modal-contact-btn" href="#" class="btn btn-primary">
+                        <i class="bi bi-telephone"></i> Contact Lead
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showLeadDetails(id, company, contact, email, phone, domain, scanner, riskScore, leadScore, estimatedValue, status, dateGenerated, vulnerabilities) {
+            // Populate modal with lead details
+            document.getElementById('modal-company').textContent = company;
+            document.getElementById('modal-domain').textContent = domain;
+            document.getElementById('modal-date').textContent = dateGenerated;
+            document.getElementById('modal-status').textContent = status;
+            document.getElementById('modal-contact').textContent = contact;
+            document.getElementById('modal-email').textContent = email;
+            document.getElementById('modal-email').href = 'mailto:' + email;
+            
+            // Handle phone number
+            if (phone && phone.trim() !== '') {
+                document.getElementById('modal-phone').textContent = phone;
+                document.getElementById('modal-phone').href = 'tel:' + phone;
+                document.getElementById('modal-contact-btn').href = 'tel:' + phone;
+                document.getElementById('modal-contact-btn').style.display = 'inline-block';
+            } else {
+                document.getElementById('modal-phone').textContent = 'Not provided';
+                document.getElementById('modal-phone').href = '#';
+                document.getElementById('modal-contact-btn').style.display = 'none';
+            }
+            
+            document.getElementById('modal-scanner').textContent = scanner;
+            
+            // Update risk score with appropriate color
+            const riskScoreElement = document.getElementById('modal-risk-score');
+            riskScoreElement.textContent = riskScore + '%';
+            if (riskScore < 50) {
+                riskScoreElement.className = 'text-danger';
+            } else if (riskScore < 70) {
+                riskScoreElement.className = 'text-warning';
+            } else {
+                riskScoreElement.className = 'text-success';
+            }
+            
+            // Update lead score with appropriate color
+            const leadScoreElement = document.getElementById('modal-lead-score');
+            leadScoreElement.textContent = leadScore;
+            if (leadScore === 'Hot') {
+                leadScoreElement.className = 'text-danger';
+            } else if (leadScore === 'Warm') {
+                leadScoreElement.className = 'text-warning';
+            } else {
+                leadScoreElement.className = 'text-info';
+            }
+            
+            document.getElementById('modal-estimated-value').textContent = '$' + Math.round(estimatedValue);
+            document.getElementById('modal-vulnerabilities').textContent = vulnerabilities;
+        }
+    </script>
 </body>
 </html>
