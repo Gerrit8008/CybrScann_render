@@ -608,6 +608,87 @@
             </div>
         </div>
 
+        <!-- Industry Benchmark Section -->
+        {% if industry_benchmarks %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2><i class="bi bi-graph-up"></i>Industry Benchmarking</h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>How You Compare:</strong> This comparison shows how your security posture compares to similar companies in your industry and size category.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="summary-card text-center">
+                            <h5>Your Security Score</h5>
+                            <div class="summary-value {% if risk_score > industry_benchmarks.avg_risk_score %}text-low{% else %}text-high{% endif %}">
+                                {{ risk_score }}/100
+                            </div>
+                            {% if risk_score > industry_benchmarks.avg_risk_score %}
+                                <p class="text-success"><i class="bi bi-arrow-up"></i> {{ risk_score - industry_benchmarks.avg_risk_score }} points above industry average</p>
+                            {% elif risk_score < industry_benchmarks.avg_risk_score %}
+                                <p class="text-warning"><i class="bi bi-arrow-down"></i> {{ industry_benchmarks.avg_risk_score - risk_score }} points below industry average</p>
+                            {% else %}
+                                <p class="text-info"><i class="bi bi-dash"></i> Exactly at industry average</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="summary-card text-center">
+                            <h5>Industry Average</h5>
+                            <div class="summary-value text-info">
+                                {{ industry_benchmarks.avg_risk_score }}/100
+                            </div>
+                            <p>{{ scan.industry|title if scan.industry else 'General' }} industry • {{ scan.company_size if scan.company_size else 'Unknown size' }} companies</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-exclamation-triangle me-2"></i>Vulnerability Comparison</h6>
+                        <p><strong>Your Issues Found:</strong> {{ scan.vulnerabilities_found or 0 }}</p>
+                        <p><strong>Industry Average:</strong> {{ industry_benchmarks.common_vulnerabilities }}</p>
+                        {% if (scan.vulnerabilities_found or 0) < industry_benchmarks.common_vulnerabilities %}
+                            <span class="badge bg-success">Better than average</span>
+                        {% elif (scan.vulnerabilities_found or 0) > industry_benchmarks.common_vulnerabilities %}
+                            <span class="badge bg-warning">Above average vulnerabilities</span>
+                        {% else %}
+                            <span class="badge bg-info">At industry average</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-shield-check me-2"></i>Compliance Requirements</h6>
+                        <p>Common standards in your industry:</p>
+                        <div class="mb-2">
+                            {% for requirement in industry_benchmarks.compliance_requirements %}
+                                <span class="badge bg-secondary me-1 mb-1">{{ requirement }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6><i class="bi bi-bullseye me-2"></i>Critical Focus Areas for {{ scan.industry|title if scan.industry else 'Your' }} Companies</h6>
+                    <div class="row">
+                        {% for area in industry_benchmarks.critical_areas %}
+                        <div class="col-md-4 mb-2">
+                            <div class="alert alert-light mb-2 py-2">
+                                <i class="bi bi-check-circle text-primary me-2"></i>{{ area }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Network Security Section -->
         <div class="card mb-4">
             <div class="card-header">
