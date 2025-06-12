@@ -842,13 +842,31 @@ def view_scan_report(scan_id):
 @login_required
 def client_leads():
     """MSP leads management page"""
-    # Get user's actual leads
-    user_leads = [lead for lead in leads_db.values() 
-                 if lead.get('user_id') == current_user.id]
+    # Get user's actual leads with associated scan information
+    user_leads_enhanced = []
+    for lead in leads_db.values():
+        if lead.get('user_id') == current_user.id:
+            # Find associated scan for this lead
+            associated_scan = None
+            for scan in scans_db.values():
+                if scan.get('lead_id') == lead.get('id'):
+                    associated_scan = scan
+                    break
+            
+            # Enhance lead data with scan information
+            enhanced_lead = lead.copy()
+            if associated_scan:
+                enhanced_lead['scan_id'] = associated_scan.get('id')
+                enhanced_lead['report_url'] = f"/client/reports/{associated_scan.get('id')}"
+            else:
+                enhanced_lead['scan_id'] = None
+                enhanced_lead['report_url'] = None
+            
+            user_leads_enhanced.append(enhanced_lead)
     
     # Calculate real metrics
-    total_leads = len(user_leads)
-    total_revenue_potential = sum(lead.get('estimated_value', 0) for lead in user_leads)
+    total_leads = len(user_leads_enhanced)
+    total_revenue_potential = sum(lead.get('estimated_value', 0) for lead in user_leads_enhanced)
     
     # Calculate conversion rate (demo calculation)
     conversion_rate = 32.5 if total_leads > 0 else 0
@@ -857,17 +875,17 @@ def client_leads():
     # Build lead metrics
     lead_metrics = {
         'total_leads_generated': total_leads,
-        'leads_this_month': len([l for l in user_leads if l.get('date_generated', '').startswith('2024-06')]),
+        'leads_this_month': len([l for l in user_leads_enhanced if l.get('date_generated', '').startswith(datetime.now().strftime('%Y-%m'))]),
         'conversion_rate': conversion_rate,
         'avg_deal_size': avg_deal_size,
         'total_revenue_potential': total_revenue_potential,
-        'active_prospects': len([l for l in user_leads if l.get('status') in ['New', 'Contacted']]),
-        'qualified_leads': len([l for l in user_leads if l.get('lead_score') in ['Hot', 'Warm']]),
-        'closed_deals': len([l for l in user_leads if l.get('status') == 'Closed Won'])
+        'active_prospects': len([l for l in user_leads_enhanced if l.get('status') in ['New', 'Contacted']]),
+        'qualified_leads': len([l for l in user_leads_enhanced if l.get('lead_score') in ['Hot', 'Warm']]),
+        'closed_deals': len([l for l in user_leads_enhanced if l.get('status') == 'Closed Won'])
     }
     
     # Sort leads by date
-    recent_leads = sorted(user_leads, key=lambda x: x.get('date_generated', ''), reverse=True)
+    recent_leads = sorted(user_leads_enhanced, key=lambda x: x.get('date_generated', ''), reverse=True)
     
     return render_template('client/leads_minimal.html',
                          user=current_user,
