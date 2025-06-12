@@ -305,7 +305,7 @@ user_counter = 1
 
 # Create demo accounts
 def create_demo_accounts():
-    global user_counter
+    global user_counter, scanner_counter
     
     # Demo admin account
     admin_user = User('admin', 'admin', 'admin@cybrscan.com', generate_password_hash('admin123'))
@@ -323,6 +323,35 @@ def create_demo_accounts():
     demo_user.business_name = 'SecureIT Solutions'
     demo_user.msp_data = MSP_LEAD_DATA['demo']
     users['demo'] = demo_user
+    
+    # Create a demo scanner with custom colors for testing
+    scanner_counter += 1
+    demo_scanner_id = f"scanner_{scanner_counter}"
+    demo_scanner = {
+        'id': demo_scanner_id,
+        'api_key': secrets.token_urlsafe(32),
+        'user_id': 'demo',
+        'name': 'Demo Custom Scanner',
+        'description': 'Demo scanner with custom colors',
+        'domain': 'demo.example.com',
+        'contact_email': 'demo@example.com',
+        'primary_color': '#e74c3c',
+        'secondary_color': '#3498db',
+        'accent_color': '#f39c12',
+        'background_color': '#ffffff',
+        'text_color': '#2c3e50',
+        'button_color': '#27ae60',
+        'logo_url': '',
+        'favicon_url': '',
+        'email_subject': 'Your Security Scan Report',
+        'email_intro': '',
+        'scan_options': {},
+        'status': 'active',
+        'created_at': datetime.now().isoformat(),
+        'total_scans': 0,
+        'leads_generated': 0
+    }
+    scanners_db[demo_scanner_id] = demo_scanner
     
     user_counter = 3
 
@@ -907,6 +936,14 @@ def view_scan_report(scan_id):
         flash('Access denied', 'error')
         return redirect(url_for('client_reports'))
     
+    # Ensure scanner has all required color fields with defaults
+    scanner.setdefault('primary_color', '#007bff')
+    scanner.setdefault('secondary_color', '#6c757d')
+    scanner.setdefault('button_color', '#007bff')
+    scanner.setdefault('background_color', '#ffffff')
+    scanner.setdefault('text_color', '#333333')
+    scanner.setdefault('accent_color', '#28a745')
+    
     # Get associated lead
     lead = leads_db.get(scan.get('lead_id'))
     
@@ -914,6 +951,15 @@ def view_scan_report(scan_id):
     industry_benchmarks = None
     if scan.get('industry') and scan.get('company_size'):
         industry_benchmarks = get_industry_benchmarks(scan.get('industry'), scan.get('company_size'))
+    
+    # Debug: log scanner colors for report
+    if scanner:
+        print(f"Report scanner {scanner.get('id')} colors:")
+        print(f"  Primary: {scanner.get('primary_color')}")
+        print(f"  Secondary: {scanner.get('secondary_color')}")
+        print(f"  Button: {scanner.get('button_color')}")
+    else:
+        print("No scanner object found for report")
     
     return render_template('client/scan_report.html',
                          user=current_user,
@@ -1340,6 +1386,12 @@ def create_scanner():
         scanner_id = f"scanner_{scanner_counter}"
         api_key = secrets.token_urlsafe(32)
         
+        # Debug: log received color data
+        print(f"Creating scanner with colors:")
+        print(f"  primaryColor: {data.get('primaryColor')}")
+        print(f"  secondaryColor: {data.get('secondaryColor')}")
+        print(f"  buttonColor: {data.get('buttonColor')}")
+        
         # Create scanner object
         scanner = {
             'id': scanner_id,
@@ -1365,6 +1417,12 @@ def create_scanner():
             'total_scans': 0,
             'leads_generated': 0
         }
+        
+        # Debug: log stored colors
+        print(f"Stored scanner colors:")
+        print(f"  primary_color: {scanner['primary_color']}")
+        print(f"  secondary_color: {scanner['secondary_color']}")
+        print(f"  button_color: {scanner['button_color']}")
         
         # Store scanner
         scanners_db[scanner_id] = scanner
@@ -1493,6 +1551,20 @@ def scanner_page(scanner_id):
     scanner = scanners_db.get(scanner_id)
     if not scanner:
         return "Scanner not found", 404
+    
+    # Ensure scanner has all required color fields with defaults
+    scanner.setdefault('primary_color', '#007bff')
+    scanner.setdefault('secondary_color', '#6c757d')
+    scanner.setdefault('button_color', '#007bff')
+    scanner.setdefault('background_color', '#ffffff')
+    scanner.setdefault('text_color', '#333333')
+    scanner.setdefault('accent_color', '#28a745')
+    
+    # Debug: log scanner colors
+    print(f"Scanner {scanner_id} colors:")
+    print(f"  Primary: {scanner.get('primary_color')}")
+    print(f"  Secondary: {scanner.get('secondary_color')}")
+    print(f"  Button: {scanner.get('button_color')}")
     
     return render_template('scanner/scanner_public.html', scanner=scanner)
 
@@ -1802,6 +1874,27 @@ def debug_users():
     return jsonify({
         'total_users': len(users),
         'users': user_info
+    })
+
+# Debug route to check scanners
+@app.route('/debug/scanners')
+def debug_scanners():
+    """Debug route to check scanner data"""
+    scanner_info = {}
+    for scanner_id, scanner in scanners_db.items():
+        scanner_info[scanner_id] = {
+            'id': scanner.get('id'),
+            'name': scanner.get('name'),
+            'primary_color': scanner.get('primary_color'),
+            'secondary_color': scanner.get('secondary_color'),
+            'button_color': scanner.get('button_color'),
+            'background_color': scanner.get('background_color'),
+            'text_color': scanner.get('text_color'),
+            'user_id': scanner.get('user_id')
+        }
+    return jsonify({
+        'total_scanners': len(scanners_db),
+        'scanners': scanner_info
     })
 
 if __name__ == '__main__':
