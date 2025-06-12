@@ -738,28 +738,47 @@ def admin_dashboard():
         'avg_scans_per_client': total_scans / max(1, total_clients) if total_clients > 0 else 0
     }
     
-    # Get recent real activity
+    # Get recent real activity (completely exclude demo data)
     recent_activity = []
     
-    # Add recent client registrations
-    for user in sorted(real_users, key=lambda x: getattr(x, 'created_at', ''), reverse=True)[:2]:
-        recent_activity.append({
-            'type': 'New Client', 
-            'description': f'{user.email} registered', 
-            'time': getattr(user, 'created_at', 'Recently')[:16].replace('T', ' ') if hasattr(user, 'created_at') else 'Recently'
-        })
+    # Add recent client registrations (exclude demo)
+    for user in sorted(real_users, key=lambda x: getattr(x, 'created_at', ''), reverse=True)[:3]:
+        if hasattr(user, 'created_at') and user.created_at:
+            recent_activity.append({
+                'type': 'New Client', 
+                'description': f'{user.email} registered', 
+                'time': user.created_at[:16].replace('T', ' ')
+            })
     
-    # Add recent scans
+    # Add recent scans (exclude demo scans)
     for scan in sorted(real_scans, key=lambda x: x.get('timestamp', ''), reverse=True)[:3]:
-        recent_activity.append({
-            'type': 'Scan Completed', 
-            'description': f'Security scan for {scan.get("domain", "unknown domain")}', 
-            'time': scan.get('timestamp', '')[:16].replace('T', ' ') if scan.get('timestamp') else 'Recently'
-        })
+        if scan.get('timestamp'):
+            recent_activity.append({
+                'type': 'Scan Completed', 
+                'description': f'Security scan for {scan.get("domain", "unknown domain")}', 
+                'time': scan.get('timestamp', '')[:16].replace('T', ' ')
+            })
     
-    # Sort by time
+    # Add recent leads (exclude demo leads)
+    for lead in sorted(real_leads, key=lambda x: x.get('date_generated', ''), reverse=True)[:2]:
+        if lead.get('date_generated'):
+            recent_activity.append({
+                'type': 'New Lead', 
+                'description': f'Lead generated: {lead.get("company", "Unknown Company")}', 
+                'time': lead.get('date_generated', '') + ' 12:00'
+            })
+    
+    # Sort by time and take top 5
     recent_activity.sort(key=lambda x: x.get('time', ''), reverse=True)
     recent_activity = recent_activity[:5]
+    
+    # If no real activity, show a message instead of empty
+    if not recent_activity:
+        recent_activity = [{
+            'type': 'System', 
+            'description': 'No recent activity - waiting for first real users', 
+            'time': datetime.now().strftime('%Y-%m-%d %H:%M')
+        }]
     
     # Real subscription breakdown
     subscription_breakdown = {}
@@ -787,16 +806,35 @@ def admin_users():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Sample user data
-    sample_users = [
-        {'id': 1, 'username': 'demo', 'email': 'demo@example.com', 'role': 'client', 'subscription': 'professional', 'status': 'active'},
-        {'id': 2, 'username': 'testuser', 'email': 'test@company.com', 'role': 'client', 'subscription': 'starter', 'status': 'active'},
-        {'id': 3, 'username': 'admin', 'email': 'admin@cybrscan.com', 'role': 'admin', 'subscription': 'enterprise', 'status': 'active'}
-    ]
+    # Get real users (exclude demo users and show admin separately)
+    real_client_users = []
+    admin_users = []
+    
+    for user_id, user in users.items():
+        if user_id == 'demo':  # Skip demo user completely
+            continue
+            
+        user_data = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'role': user.role,
+            'subscription': user.subscription_level,
+            'status': 'active',
+            'created_at': getattr(user, 'created_at', 'Unknown')[:10] if hasattr(user, 'created_at') else 'Unknown'
+        }
+        
+        if user.role == 'admin':
+            admin_users.append(user_data)
+        else:
+            real_client_users.append(user_data)
+    
+    # Combine admin users and real client users (admin first)
+    all_real_users = admin_users + real_client_users
     
     return render_template('admin/user-management.html', 
                          user=current_user,
-                         users=sample_users)
+                         users=all_real_users)
 
 @app.route('/admin/scanners')
 @login_required
@@ -870,15 +908,30 @@ def admin_subscriptions():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Sample subscription data
-    sample_subscriptions = [
-        {'user': 'demo@example.com', 'plan': 'Professional', 'status': 'active', 'next_billing': '2024-07-09', 'amount': '$99.99'},
-        {'user': 'test@company.com', 'plan': 'Starter', 'status': 'active', 'next_billing': '2024-06-20', 'amount': '$29.99'}
-    ]
+    # Get real subscription data (exclude demo users)
+    real_subscriptions = []
+    
+    for user_id, user in users.items():
+        if user.role == 'client' and user_id != 'demo':
+            # Get subscription tier details
+            tier_info = SUBSCRIPTION_TIERS.get(user.subscription_level, SUBSCRIPTION_TIERS['basic'])
+            
+            # Calculate next billing date
+            next_billing = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+            
+            subscription_data = {
+                'user': user.email,
+                'plan': tier_info['name'],
+                'status': getattr(user, 'subscription_status', 'active'),
+                'next_billing': next_billing,
+                'amount': f'${tier_info["price"]:.2f}' if tier_info['price'] > 0 else 'Free',
+                'created_at': getattr(user, 'created_at', 'Unknown')[:10] if hasattr(user, 'created_at') else 'Unknown'
+            }
+            real_subscriptions.append(subscription_data)
     
     return render_template('admin/subscriptions-dashboard.html',
                          user=current_user,
-                         subscriptions=sample_subscriptions)
+                         subscriptions=real_subscriptions)
 
 @app.route('/admin/reports')
 @login_required
@@ -2018,27 +2071,41 @@ def run_scanner():
 @app.route('/debug/users')
 def debug_users():
     """Debug route to check user accounts"""
-    user_info = {}
+    real_users = {}
+    demo_users = {}
+    
     for user_id, user in users.items():
-        user_info[user_id] = {
+        user_data = {
             'id': user.id,
             'username': user.username,
             'email': user.email,
             'role': user.role,
-            'subscription_level': user.subscription_level
+            'subscription_level': user.subscription_level,
+            'created_at': getattr(user, 'created_at', 'Unknown')
         }
+        
+        if user_id == 'demo' or user.email.endswith('@example.com'):
+            demo_users[user_id] = user_data
+        else:
+            real_users[user_id] = user_data
+    
     return jsonify({
         'total_users': len(users),
-        'users': user_info
+        'real_users': real_users,
+        'demo_users': demo_users,
+        'real_user_count': len(real_users),
+        'demo_user_count': len(demo_users)
     })
 
 # Debug route to check scanners
 @app.route('/debug/scanners')
 def debug_scanners():
     """Debug route to check scanner data"""
-    scanner_info = {}
+    real_scanners = {}
+    demo_scanners = {}
+    
     for scanner_id, scanner in scanners_db.items():
-        scanner_info[scanner_id] = {
+        scanner_data = {
             'id': scanner.get('id'),
             'name': scanner.get('name'),
             'primary_color': scanner.get('primary_color'),
@@ -2046,11 +2113,21 @@ def debug_scanners():
             'button_color': scanner.get('button_color'),
             'background_color': scanner.get('background_color'),
             'text_color': scanner.get('text_color'),
-            'user_id': scanner.get('user_id')
+            'user_id': scanner.get('user_id'),
+            'created_at': scanner.get('created_at', 'Unknown')
         }
+        
+        if scanner.get('user_id') == 'demo':
+            demo_scanners[scanner_id] = scanner_data
+        else:
+            real_scanners[scanner_id] = scanner_data
+    
     return jsonify({
         'total_scanners': len(scanners_db),
-        'scanners': scanner_info
+        'real_scanners': real_scanners,
+        'demo_scanners': demo_scanners,
+        'real_scanner_count': len(real_scanners),
+        'demo_scanner_count': len(demo_scanners)
     })
 
 if __name__ == '__main__':
