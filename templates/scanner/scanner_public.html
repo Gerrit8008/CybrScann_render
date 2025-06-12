@@ -18,11 +18,11 @@
     <style>
         /* White label branding styles */
         :root {
-            --primary-color: {{ scanner.primary_color }};
-            --secondary-color: {{ scanner.secondary_color }};
-            --button-color: {{ scanner.button_color }};
-            --background-color: {{ scanner.background_color }};
-            --text-color: {{ scanner.text_color }};
+            --primary-color: {{ scanner.primary_color if scanner and scanner.primary_color else '#007bff' }};
+            --secondary-color: {{ scanner.secondary_color if scanner and scanner.secondary_color else '#6c757d' }};
+            --button-color: {{ scanner.button_color if scanner and scanner.button_color else '#007bff' }};
+            --background-color: {{ scanner.background_color if scanner and scanner.background_color else '#ffffff' }};
+            --text-color: {{ scanner.text_color if scanner and scanner.text_color else '#333333' }};
             --border-color: #e9ecef;
             --low-color: #28a745;
             --danger-color: #dc3545;
