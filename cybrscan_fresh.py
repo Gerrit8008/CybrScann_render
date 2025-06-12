@@ -303,6 +303,10 @@ class User(UserMixin):
 users = {}
 user_counter = 1
 
+# In-memory scanner storage
+scanners_db = {}
+scanner_counter = 0
+
 # Create demo accounts
 def create_demo_accounts():
     global user_counter, scanner_counter
@@ -1349,11 +1353,6 @@ def login_info():
         },
         'note': 'These are demo accounts for testing purposes'
     })
-
-# In-memory scanner storage
-scanners_db = {}
-scanner_counter = 0
-
 
 @app.route('/api/scanner/create', methods=['POST'])
 @login_required
