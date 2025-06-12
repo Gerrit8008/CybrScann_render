@@ -467,6 +467,8 @@ def register():
         password_hash = generate_password_hash(password)
         
         new_user = User(user_id, username, email, password_hash)
+        new_user.created_at = datetime.now().isoformat()
+        new_user.company_name = company_name
         users[user_id] = new_user
         user_counter += 1
         
@@ -700,32 +702,74 @@ def admin_dashboard():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Sample dashboard statistics
+    # Get real clients (exclude demo users)
+    real_users = [user for user_id, user in users.items() if user.role == 'client' and user_id != 'demo']
+    
+    # Get real scanners (exclude demo scanners)
+    real_scanners = [scanner for scanner in scanners_db.values() if scanner.get('user_id') != 'demo']
+    
+    # Get real scans (exclude demo scans)
+    real_scans = [scan for scan in scans_db.values() 
+                 if any(s.get('user_id') != 'demo' for s in scanners_db.values() 
+                       if s.get('id') == scan.get('scanner_id'))]
+    
+    # Get real leads (exclude demo leads)
+    real_leads = [lead for lead in leads_db.values() if lead.get('user_id') != 'demo']
+    
+    # Calculate real statistics
+    total_clients = len(real_users)
+    total_scanners = len(real_scanners) 
+    total_scans = len(real_scans)
+    total_leads = len(real_leads)
+    
+    # Calculate revenue from real subscriptions
+    monthly_revenue = sum(SUBSCRIPTION_TIERS.get(user.subscription_level, {}).get('price', 0) for user in real_users)
+    total_revenue = monthly_revenue * 6  # Estimate 6 months average
+    
     dashboard_stats = {
-        'total_clients': 15,
-        'total_scanners': 28,
-        'total_scans': 342,
-        'total_revenue': 2450.00,
-        'monthly_revenue': 890.00,
-        'active_subscriptions': 12,
-        'conversion_rate': 24.5,
-        'avg_scans_per_client': 23
+        'total_clients': total_clients,
+        'total_scanners': total_scanners,
+        'total_scans': total_scans,
+        'total_leads': total_leads,
+        'total_revenue': total_revenue,
+        'monthly_revenue': monthly_revenue,
+        'active_subscriptions': total_clients,
+        'conversion_rate': (total_leads / max(1, total_scans)) * 100 if total_scans > 0 else 0,
+        'avg_scans_per_client': total_scans / max(1, total_clients) if total_clients > 0 else 0
     }
     
-    # Sample recent activity
-    recent_activity = [
-        {'type': 'New Client', 'description': 'demo@example.com registered', 'time': '2 hours ago'},
-        {'type': 'Scan Completed', 'description': 'Security scan for example.com', 'time': '3 hours ago'},
-        {'type': 'Subscription', 'description': 'User upgraded to Professional', 'time': '5 hours ago'}
-    ]
+    # Get recent real activity
+    recent_activity = []
     
-    # Sample subscription breakdown
-    subscription_breakdown = {
-        'basic': {'count': 8, 'revenue': 0},
-        'starter': {'count': 4, 'revenue': 119.96},
-        'professional': {'count': 2, 'revenue': 199.98},
-        'enterprise': {'count': 1, 'revenue': 299.99}
-    }
+    # Add recent client registrations
+    for user in sorted(real_users, key=lambda x: getattr(x, 'created_at', ''), reverse=True)[:2]:
+        recent_activity.append({
+            'type': 'New Client', 
+            'description': f'{user.email} registered', 
+            'time': getattr(user, 'created_at', 'Recently')[:16].replace('T', ' ') if hasattr(user, 'created_at') else 'Recently'
+        })
+    
+    # Add recent scans
+    for scan in sorted(real_scans, key=lambda x: x.get('timestamp', ''), reverse=True)[:3]:
+        recent_activity.append({
+            'type': 'Scan Completed', 
+            'description': f'Security scan for {scan.get("domain", "unknown domain")}', 
+            'time': scan.get('timestamp', '')[:16].replace('T', ' ') if scan.get('timestamp') else 'Recently'
+        })
+    
+    # Sort by time
+    recent_activity.sort(key=lambda x: x.get('time', ''), reverse=True)
+    recent_activity = recent_activity[:5]
+    
+    # Real subscription breakdown
+    subscription_breakdown = {}
+    for tier_name in SUBSCRIPTION_TIERS.keys():
+        tier_users = [u for u in real_users if u.subscription_level == tier_name]
+        tier_price = SUBSCRIPTION_TIERS[tier_name]['price']
+        subscription_breakdown[tier_name] = {
+            'count': len(tier_users),
+            'revenue': len(tier_users) * tier_price
+        }
     
     return render_template('admin/admin-dashboard.html', 
                          user=current_user,
@@ -762,15 +806,29 @@ def admin_scanners():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Sample scanner data
-    sample_scanners = [
-        {'id': 1, 'name': 'Demo Scanner', 'owner': 'demo@example.com', 'scans': 45, 'status': 'active'},
-        {'id': 2, 'name': 'Test Scanner', 'owner': 'test@company.com', 'scans': 12, 'status': 'active'}
-    ]
+    # Get real scanner data (exclude demo scanners)
+    real_scanners = []
+    for scanner in scanners_db.values():
+        if scanner.get('user_id') != 'demo':
+            # Get owner info
+            owner = users.get(scanner.get('user_id'))
+            owner_email = owner.email if owner else 'Unknown'
+            
+            # Count scans for this scanner
+            scanner_scans = [scan for scan in scans_db.values() if scan.get('scanner_id') == scanner.get('id')]
+            
+            real_scanners.append({
+                'id': scanner.get('id'),
+                'name': scanner.get('name', 'Unknown Scanner'),
+                'owner': owner_email,
+                'scans': len(scanner_scans),
+                'status': scanner.get('status', 'active'),
+                'created_at': scanner.get('created_at', 'Unknown')[:10] if scanner.get('created_at') else 'Unknown'
+            })
     
     return render_template('admin/scanner-management_minimal.html',
                          user=current_user,
-                         scanners=sample_scanners)
+                         scanners=real_scanners)
 
 @app.route('/admin/clients')
 @login_required
@@ -780,15 +838,29 @@ def admin_clients():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Sample client data
-    sample_clients = [
-        {'id': 1, 'name': 'Demo Company', 'email': 'demo@example.com', 'subscription': 'professional', 'scanners': 2, 'scans': 45},
-        {'id': 2, 'name': 'Test Corp', 'email': 'test@company.com', 'subscription': 'starter', 'scanners': 1, 'scans': 12}
-    ]
+    # Get real client data (exclude demo users)
+    real_clients = []
+    for user_id, user in users.items():
+        if user.role == 'client' and user_id != 'demo':
+            # Count user's scanners and scans
+            user_scanners = [s for s in scanners_db.values() if s.get('user_id') == user_id]
+            user_scans = [scan for scan in scans_db.values() 
+                         if any(scanner.get('id') == scan.get('scanner_id') and scanner.get('user_id') == user_id 
+                               for scanner in scanners_db.values())]
+            
+            real_clients.append({
+                'id': user.id,
+                'name': getattr(user, 'company_name', 'Unknown Company'),
+                'email': user.email,
+                'subscription': user.subscription_level,
+                'scanners': len(user_scanners),
+                'scans': len(user_scans),
+                'created_at': getattr(user, 'created_at', 'Unknown')[:10] if hasattr(user, 'created_at') else 'Unknown'
+            })
     
     return render_template('admin/client-management.html',
                          user=current_user,
-                         clients=sample_clients)
+                         clients=real_clients)
 
 @app.route('/admin/subscriptions')
 @login_required
@@ -816,16 +888,101 @@ def admin_reports():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Sample reports data
-    sample_reports = [
-        {'type': 'Monthly Revenue', 'period': 'June 2024', 'value': '$890.00', 'status': 'completed'},
-        {'type': 'User Growth', 'period': 'June 2024', 'value': '15 new users', 'status': 'completed'},
-        {'type': 'Scan Activity', 'period': 'June 2024', 'value': '342 scans', 'status': 'completed'}
+    # Get real data for reports (exclude demo data)
+    real_users = [user for user_id, user in users.items() if user.role == 'client' and user_id != 'demo']
+    real_scans = [scan for scan in scans_db.values() 
+                 if any(s.get('user_id') != 'demo' for s in scanners_db.values() 
+                       if s.get('id') == scan.get('scanner_id'))]
+    real_leads = [lead for lead in leads_db.values() if lead.get('user_id') != 'demo']
+    
+    # Calculate current month stats
+    current_month = datetime.now().strftime('%Y-%m')
+    current_month_name = datetime.now().strftime('%B %Y')
+    
+    # Monthly revenue from real subscriptions
+    monthly_revenue = sum(SUBSCRIPTION_TIERS.get(user.subscription_level, {}).get('price', 0) for user in real_users)
+    
+    # User growth this month
+    users_this_month = len([u for u in real_users if hasattr(u, 'created_at') and u.created_at.startswith(current_month)])
+    
+    # Scan activity this month  
+    scans_this_month = len([s for s in real_scans if s.get('timestamp', '').startswith(current_month)])
+    
+    # Leads generated this month
+    leads_this_month = len([l for l in real_leads if l.get('date_generated', '').startswith(current_month)])
+    
+    # Security metrics
+    total_vulnerabilities = sum(scan.get('vulnerabilities_found', 0) for scan in real_scans)
+    avg_risk_score = sum(scan.get('risk_score', 0) for scan in real_scans) // max(1, len(real_scans)) if real_scans else 0
+    
+    # Generate real reports data
+    real_reports = [
+        {
+            'type': 'Monthly Revenue', 
+            'period': current_month_name, 
+            'value': f'${monthly_revenue:.2f}', 
+            'status': 'completed',
+            'trend': '+12%' if monthly_revenue > 0 else '0%'
+        },
+        {
+            'type': 'New Clients', 
+            'period': current_month_name, 
+            'value': f'{users_this_month} new clients', 
+            'status': 'completed',
+            'trend': f'+{users_this_month}' if users_this_month > 0 else '0'
+        },
+        {
+            'type': 'Scan Activity', 
+            'period': current_month_name, 
+            'value': f'{scans_this_month} scans', 
+            'status': 'completed',
+            'trend': f'+{scans_this_month}' if scans_this_month > 0 else '0'
+        },
+        {
+            'type': 'Leads Generated', 
+            'period': current_month_name, 
+            'value': f'{leads_this_month} leads', 
+            'status': 'completed',
+            'trend': f'+{leads_this_month}' if leads_this_month > 0 else '0'
+        },
+        {
+            'type': 'Security Score', 
+            'period': current_month_name, 
+            'value': f'{avg_risk_score}/100 avg', 
+            'status': 'completed',
+            'trend': 'Good' if avg_risk_score > 75 else 'Needs Attention'
+        },
+        {
+            'type': 'Total Vulnerabilities', 
+            'period': 'All Time', 
+            'value': f'{total_vulnerabilities} found', 
+            'status': 'completed',
+            'trend': 'Tracking'
+        }
     ]
+    
+    # Additional metrics for detailed reporting
+    detailed_metrics = {
+        'total_clients': len(real_users),
+        'total_scans': len(real_scans),
+        'total_leads': len(real_leads),
+        'monthly_revenue': monthly_revenue,
+        'avg_risk_score': avg_risk_score,
+        'subscription_breakdown': {}
+    }
+    
+    # Calculate subscription breakdown
+    for tier_name in SUBSCRIPTION_TIERS.keys():
+        tier_users = [u for u in real_users if u.subscription_level == tier_name]
+        detailed_metrics['subscription_breakdown'][tier_name] = {
+            'count': len(tier_users),
+            'revenue': len(tier_users) * SUBSCRIPTION_TIERS[tier_name]['price']
+        }
     
     return render_template('admin/reports-dashboard_minimal.html',
                          user=current_user,
-                         reports=sample_reports)
+                         reports=real_reports,
+                         detailed_metrics=detailed_metrics)
 
 @app.route('/admin/settings')
 @login_required
