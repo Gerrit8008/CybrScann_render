@@ -103,6 +103,85 @@ def get_user_limits(user):
             'scans_per_month': 10
         }
 
+def get_industry_benchmarks(industry, company_size):
+    """Get industry benchmark data for comparison"""
+    
+    # Industry-specific benchmark data
+    industry_benchmarks = {
+        'healthcare': {
+            'avg_risk_score': 72,
+            'common_vulnerabilities': 8,
+            'compliance_requirements': ['HIPAA', 'HITECH'],
+            'critical_areas': ['Patient Data Protection', 'Network Segmentation', 'Access Controls']
+        },
+        'finance': {
+            'avg_risk_score': 78,
+            'common_vulnerabilities': 6,
+            'compliance_requirements': ['PCI-DSS', 'SOX', 'GLBA'],
+            'critical_areas': ['Data Encryption', 'Transaction Security', 'Fraud Prevention']
+        },
+        'retail': {
+            'avg_risk_score': 68,
+            'common_vulnerabilities': 9,
+            'compliance_requirements': ['PCI-DSS'],
+            'critical_areas': ['Payment Processing', 'Customer Data', 'E-commerce Security']
+        },
+        'manufacturing': {
+            'avg_risk_score': 65,
+            'common_vulnerabilities': 11,
+            'compliance_requirements': ['ISO 27001'],
+            'critical_areas': ['Industrial Controls', 'Supply Chain', 'Intellectual Property']
+        },
+        'education': {
+            'avg_risk_score': 63,
+            'common_vulnerabilities': 12,
+            'compliance_requirements': ['FERPA'],
+            'critical_areas': ['Student Records', 'Research Data', 'Network Access']
+        },
+        'government': {
+            'avg_risk_score': 75,
+            'common_vulnerabilities': 7,
+            'compliance_requirements': ['FISMA', 'FedRAMP'],
+            'critical_areas': ['Classified Data', 'Public Services', 'Citizen Privacy']
+        },
+        'technology': {
+            'avg_risk_score': 80,
+            'common_vulnerabilities': 5,
+            'compliance_requirements': ['ISO 27001', 'SOC 2'],
+            'critical_areas': ['Code Security', 'API Protection', 'Infrastructure']
+        },
+        'other': {
+            'avg_risk_score': 70,
+            'common_vulnerabilities': 8,
+            'compliance_requirements': ['General Data Protection'],
+            'critical_areas': ['Data Protection', 'Network Security', 'Access Management']
+        }
+    }
+    
+    # Company size adjustments
+    size_adjustments = {
+        '1-10': {'risk_adjustment': -5, 'vulnerability_adjustment': 2},
+        '11-50': {'risk_adjustment': 0, 'vulnerability_adjustment': 0},
+        '51-200': {'risk_adjustment': 3, 'vulnerability_adjustment': -1},
+        '201-500': {'risk_adjustment': 5, 'vulnerability_adjustment': -2},
+        '501+': {'risk_adjustment': 8, 'vulnerability_adjustment': -3}
+    }
+    
+    # Get base industry data
+    base_data = industry_benchmarks.get(industry, industry_benchmarks['other'])
+    size_data = size_adjustments.get(company_size, size_adjustments['11-50'])
+    
+    # Apply size adjustments
+    adjusted_data = base_data.copy()
+    adjusted_data['avg_risk_score'] += size_data['risk_adjustment']
+    adjusted_data['common_vulnerabilities'] += size_data['vulnerability_adjustment']
+    
+    # Ensure values stay within reasonable bounds
+    adjusted_data['avg_risk_score'] = max(50, min(95, adjusted_data['avg_risk_score']))
+    adjusted_data['common_vulnerabilities'] = max(2, adjusted_data['common_vulnerabilities'])
+    
+    return adjusted_data
+
 # MSP Lead Generation Data
 MSP_LEAD_DATA = {
     'demo': {
@@ -831,12 +910,18 @@ def view_scan_report(scan_id):
     # Get associated lead
     lead = leads_db.get(scan.get('lead_id'))
     
+    # Get industry benchmarking data if available
+    industry_benchmarks = None
+    if scan.get('industry') and scan.get('company_size'):
+        industry_benchmarks = get_industry_benchmarks(scan.get('industry'), scan.get('company_size'))
+    
     return render_template('client/scan_report.html',
                          user=current_user,
                          client=current_user,
                          scan=scan,
                          scanner=scanner,
-                         lead=lead)
+                         lead=lead,
+                         industry_benchmarks=industry_benchmarks)
 
 @app.route('/client/leads')
 @login_required
@@ -1569,6 +1654,8 @@ def run_scanner():
         domain = data.get('domain')
         lead_email = data.get('lead_email')
         lead_name = data.get('lead_name')
+        industry = data.get('industry')
+        company_size = data.get('company_size')
         
         if not all([scanner_id, api_key, domain, lead_email, lead_name]):
             return jsonify({
@@ -1636,6 +1723,8 @@ def run_scanner():
             'email': lead_email,
             'phone': data.get('lead_phone', ''),
             'domain': domain,
+            'industry': industry,
+            'company_size': company_size,
             'scanner_used': scanner.get('name'),
             'vulnerabilities_found': vulnerabilities_found,
             'risk_score': risk_score,
@@ -1658,6 +1747,8 @@ def run_scanner():
             'scanner_id': scanner_id,
             'lead_id': lead_id,
             'domain': domain,
+            'industry': industry,
+            'company_size': company_size,
             'timestamp': datetime.now().isoformat(),
             'results': scan_results.get('results', {}),
             'ip_info': scan_results.get('ip_info', {}),
