@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ scanner.name }} Security Scan Results</title>
+    {% if scanner and scanner.favicon_url %}
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ scanner.favicon_url }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ scanner.favicon_url }}">
+    <link rel="shortcut icon" href="{{ scanner.favicon_url }}">
+    {% else %}
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/favicon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/images/favicon.png">
+    <link rel="shortcut icon" href="/static/images/favicon.png">
+    {% endif %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: {{ colors.primary_color if colors else '#007bff' }};
+            --secondary-color: {{ colors.secondary_color if colors else '#6c757d' }};
+            --button-color: {{ colors.button_color if colors else '#007bff' }};
+            --background-color: {{ colors.background_color if colors else '#ffffff' }};
+            --text-color: {{ colors.text_color if colors else '#333333' }};
+            --critical-color: #dc3545;
+            --high-color: #fd7e14;
+            --medium-color: #ffc107;
+            --low-color: #198754;
+            --border-color: #e9ecef;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-color);
+            background-color: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 3rem 0 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo {
+            max-height: 60px;
+            margin-bottom: 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 1.5rem;
+            border: none;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-header i {
+            margin-right: 0.75rem;
+            font-size: 1.5rem;
+        }
+
+        .risk-score {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        .score-container {
+            text-align: center;
+        }
+
+        .gauge {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+        }
+
+        .gauge-background {
+            fill: none;
+            stroke: #e9ecef;
+        }
+
+        .gauge-value {
+            fill: none;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .gauge-text {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .score-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            text-transform: uppercase;
+        }
+
+        .text-critical { color: var(--critical-color); }
+        .text-high { color: var(--high-color); }
+        .text-medium { color: var(--medium-color); }
+        .text-low { color: var(--low-color); }
+
+        .print-button {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .print-button:hover {
+            background: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        @media print {
+            .print-button,
+            .btn,
+            .alert {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            
+            .header {
+                background: var(--primary-color) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        .logo-watermark {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            opacity: 0.3;
+            max-width: 150px;
+            max-height: 75px;
+            z-index: 9999;
+            pointer-events: none;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        @media print {
+            .logo-watermark {
+                opacity: 0.05;
+                right: 10px;
+                bottom: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 2rem 0 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .gauge {
+                width: 120px;
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="text-center">
+                {% if logo_url %}
+                <img src="{{ logo_url }}" alt="{{ scanner.name }} Logo" class="logo">
+                {% endif %}
+                <h1>{{ scanner.name if scanner else 'Security Scan' }} Results</h1>
+                <p class="mb-0">Scan completed: {{ scan.created_at.strftime('%Y-%m-%d %H:%M:%S') if scan and scan.created_at else 'Unknown Date' }}</p>
+                
+                <div class="mt-3">
+                    <button class="btn btn-light me-2" onclick="window.print()">
+                        <i class="bi bi-printer me-2"></i>Print Report
+                    </button>
+                    <a href="/scan/{{ scanner.api_key }}" class="btn btn-light">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Run Another Scan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Overall Risk Score -->
+        <div class="card risk-score my-4">
+            <div class="card-body text-center py-5">
+                <div class="score-container">
+                    <div class="score-gauge">
+                        {% set risk_score = scan.risk_score if scan and scan.risk_score else 75 %}
+                        {% if risk_score >= 80 %}
+                            {% set risk_color = 'var(--low-color)' %}
+                            {% set risk_level = 'LOW RISK' %}
+                        {% elif risk_score >= 60 %}
+                            {% set risk_color = 'var(--medium-color)' %}
+                            {% set risk_level = 'MEDIUM RISK' %}
+                        {% elif risk_score >= 40 %}
+                            {% set risk_color = 'var(--high-color)' %}
+                            {% set risk_level = 'HIGH RISK' %}
+                        {% else %}
+                            {% set risk_color = 'var(--critical-color)' %}
+                            {% set risk_level = 'CRITICAL RISK' %}
+                        {% endif %}
+                        
+                        <svg viewBox="0 0 120 120" class="gauge">
+                            <circle class="gauge-background" r="54" cx="60" cy="60" stroke-width="12"></circle>
+                            <circle class="gauge-value" r="54" cx="60" cy="60" stroke-width="12" 
+                                    style="stroke: {{ risk_color }}; 
+                                           stroke-dasharray: {{ risk_score * 3.39 }} 339;"></circle>
+                            <text class="gauge-text" x="60" y="60" text-anchor="middle" alignment-baseline="middle"
+                                  style="fill: {{ risk_color }};">
+                                {{ risk_score }}
+                            </text>
+                        </svg>
+                        <div class="score-label" style="color: {{ risk_color }};">{{ risk_level }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2><i class="bi bi-info-circle"></i>Scan Summary</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Domain:</strong> {{ scan.domain if scan else 'Unknown' }}</p>
+                        <p><strong>Contact:</strong> {{ scan.contact_name if scan and scan.contact_name else 'Not provided' }}</p>
+                        <p><strong>Company:</strong> {{ scan.contact_company if scan and scan.contact_company else 'Not provided' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Scan Duration:</strong> {{ scan.scan_duration if scan and scan.scan_duration else 'Unknown' }} seconds</p>
+                        <p><strong>Issues Found:</strong> {{ scan.vulnerabilities_found if scan and scan.vulnerabilities_found else 0 }}</p>
+                        <p><strong>Status:</strong> 
+                            <span class="badge bg-success">{{ scan.status.title() if scan and scan.status else 'Completed' }}</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-primary mt-3">
+                    <strong><i class="bi bi-info-circle-fill me-2"></i>Next Steps:</strong>
+                    {% if scan and scan.contact_email %}
+                    A detailed security report has been sent to {{ scan.contact_email }}. 
+                    {% endif %}
+                    Please review the findings and implement the recommended security improvements.
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2><i class="bi bi-envelope"></i>Get Expert Help</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5>Need assistance implementing these security recommendations?</h5>
+                        <p>Our cybersecurity experts can help you address the identified vulnerabilities and strengthen your security posture.</p>
+                        {% if scanner and scanner.contact_email %}
+                        <p><strong>Contact:</strong> {{ scanner.contact_email }}</p>
+                        {% endif %}
+                        {% if scanner and scanner.contact_phone %}
+                        <p><strong>Phone:</strong> {{ scanner.contact_phone }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-center">
+                        {% if scanner and scanner.contact_email %}
+                        <a href="mailto:{{ scanner.contact_email }}?subject=Security Assessment Follow-up&body=I would like to discuss the security assessment results and next steps." 
+                           class="btn btn-primary btn-lg">
+                            <i class="bi bi-envelope me-2"></i>Contact Us
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="print-button" onclick="window.print()" title="Print Report">
+        <i class="bi bi-printer"></i>
+    </button>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Logo Watermark -->
+    {% if logo_url %}
+    <img src="{{ logo_url }}" alt="{{ scanner.name }} Logo" class="logo-watermark">
+    {% endif %}
+</body>
+</html>

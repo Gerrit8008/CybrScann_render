@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ scanner.name }} - Security Scanner Preview</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: {{ scanner.primary_color }};
+            --secondary-color: {{ scanner.secondary_color }};
+            --accent-color: {{ scanner.accent_color }};
+            --background-color: {{ scanner.background_color }};
+            --text-color: {{ scanner.text_color }};
+            --button-color: {{ scanner.button_color }};
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .scanner-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .scanner-card {
+            background: white;
+            border-radius: 12px;
+            padding: 3rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        
+        .scanner-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .scanner-description {
+            color: var(--text-color);
+            opacity: 0.8;
+            margin-bottom: 2rem;
+        }
+        
+        .scan-input {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 1.1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .scan-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+        
+        .scan-button {
+            background-color: var(--button-color);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .scan-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+        
+        .preview-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ffc107;
+            color: #000;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        
+        .scan-options {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .scan-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            background: #f8f9fa;
+        }
+        
+        .scan-option i {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-badge">
+        <i class="bi bi-eye"></i> PREVIEW MODE
+    </div>
+    
+    <div class="scanner-container">
+        <div class="scanner-card">
+            <div class="text-center">
+                <h1 class="scanner-title">{{ scanner.name }}</h1>
+                <p class="scanner-description">{{ scanner.description or "Comprehensive security scanning for your website" }}</p>
+                
+                <div class="mb-4">
+                    <label for="domainInput" class="form-label">Enter Domain to Scan:</label>
+                    <div class="input-group input-group-lg">
+                        <input type="text" class="form-control scan-input" id="domainInput" 
+                               placeholder="{{ scanner.domain or 'example.com' }}">
+                        <button class="scan-button" type="button" onclick="startScan()">
+                            <i class="bi bi-shield-check"></i> Start Security Scan
+                        </button>
+                    </div>
+                    <div class="form-text">We'll analyze your website's security configuration</div>
+                </div>
+                
+                <div class="scan-options">
+                    <h6 class="mb-3">Security Checks Included:</h6>
+                    
+                    {% if scanner.scan_options.ssl %}
+                    <div class="scan-option">
+                        <i class="bi bi-shield-lock text-success"></i>
+                        <div>
+                            <strong>SSL/TLS Security</strong>
+                            <br><small class="text-muted">Certificate validation and encryption analysis</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if scanner.scan_options.headers %}
+                    <div class="scan-option">
+                        <i class="bi bi-shield-check text-info"></i>
+                        <div>
+                            <strong>Security Headers</strong>
+                            <br><small class="text-muted">HTTP security headers configuration</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if scanner.scan_options.ports %}
+                    <div class="scan-option">
+                        <i class="bi bi-diagram-3 text-warning"></i>
+                        <div>
+                            <strong>Port Scanning</strong>
+                            <br><small class="text-muted">Open ports and service detection</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if scanner.scan_options.dns %}
+                    <div class="scan-option">
+                        <i class="bi bi-globe text-primary"></i>
+                        <div>
+                            <strong>DNS Analysis</strong>
+                            <br><small class="text-muted">DNS configuration and security records</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4 pt-3 border-top">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-fill-check"></i> 
+                        Powered by CybrScan Security Platform
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function startScan() {
+            const domain = document.getElementById('domainInput').value;
+            if (!domain) {
+                alert('Please enter a domain to scan');
+                return;
+            }
+            
+            // In preview mode, just show a demo message
+            alert(`Preview Mode: This would start a security scan for "${domain}"\n\nIn the live version, this would:\n1. Perform security analysis\n2. Generate detailed report\n3. Send results to {{ scanner.contact_email }}\n4. Track lead information for MSP follow-up`);
+        }
+        
+        // Auto-focus input
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('domainInput').focus();
+        });
+    </script>
+</body>
+</html>

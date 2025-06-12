@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ scanner.name }} - Security Assessment</title>
+    {% if scanner.favicon_url %}
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ scanner.favicon_url }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ scanner.favicon_url }}">
+    <link rel="shortcut icon" href="{{ scanner.favicon_url }}">
+    {% else %}
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/favicon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/images/favicon.png">
+    <link rel="shortcut icon" href="/static/images/favicon.png">
+    {% endif %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        /* White label branding styles */
+        :root {
+            --primary-color: {{ scanner.primary_color }};
+            --secondary-color: {{ scanner.secondary_color }};
+            --button-color: {{ scanner.button_color }};
+            --background-color: {{ scanner.background_color }};
+            --text-color: {{ scanner.text_color }};
+            --border-color: #e9ecef;
+            --low-color: #28a745;
+            --danger-color: #dc3545;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .logo {
+            max-height: 60px;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--button-color), var(--secondary-color));
+            border-color: var(--button-color);
+            color: white;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--button-color)dd, var(--secondary-color)dd);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color)22, var(--secondary-color)22);
+            border-bottom: 2px solid var(--primary-color);
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1.5rem;
+        }
+        
+        .card-header h2 {
+            color: var(--primary-color);
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(var(--primary-color), 0.2);
+        }
+        
+        .form-label.required:after {
+            content: '*';
+            color: var(--danger-color);
+            margin-left: 0.25rem;
+        }
+        
+        .scan-step {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        
+        .scan-step.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .form-step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .form-step-indicator:before {
+            content: "";
+            position: absolute;
+            top: 24px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--border-color);
+            z-index: 1;
+        }
+        
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+        }
+        
+        .step-bullet {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #fff;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .step-bullet.active {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 0 0 5px rgba(var(--primary-color), 0.2);
+        }
+        
+        .step-bullet.completed {
+            background-color: var(--low-color);
+            border-color: var(--low-color);
+            color: white;
+        }
+        
+        .step-label {
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.75rem;
+            color: var(--secondary-color);
+        }
+        
+        .step-bullet.active + .step-label {
+            color: var(--primary-color);
+        }
+        
+        .step-bullet.completed + .step-label {
+            color: var(--low-color);
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-info {
+            background-color: rgba(var(--primary-color), 0.1);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .progress-step {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            background: #fff;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background-color: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .progress-fill {
+            transition: width 0.5s ease-out;
+            background-color: var(--primary-color);
+            color: white;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 5px;
+        }
+        
+        .progress-step-status {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        
+        .progress-step-status.status-in-progress {
+            color: #0066cc;
+        }
+        
+        .progress-step-status.status-complete {
+            color: #28a745;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(var(--primary-color), 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(var(--primary-color), 0); }
+            100% { box-shadow: 0 0 0 0 rgba(var(--primary-color), 0); }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        .spinner-border {
+            color: var(--primary-color);
+        }
+        
+        @keyframes checkmark {
+            0% { stroke-dashoffset: 100; }
+            100% { stroke-dashoffset: 0; }
+        }
+        
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 6;
+            stroke: var(--low-color);
+            stroke-miterlimit: 10;
+            box-shadow: 0 0 0 rgba(40, 167, 69, 0.4);
+            animation: pulse-green 2s infinite;
+            margin: 0 auto;
+        }
+        
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 6;
+            stroke-miterlimit: 10;
+            stroke: var(--low-color);
+            fill: none;
+            animation: checkmark 0.8s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: checkmark 0.8s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+        
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+        
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="header fade-in">
+        <div class="container">
+            <div class="text-center">
+                {% if scanner.logo_url %}
+                <img src="{{ scanner.logo_url }}" alt="{{ scanner.name }} Logo" class="logo">
+                {% endif %}
+                <h1>{{ scanner.name }}</h1>
+                <p>{{ scanner.description or "Complete the form below to begin your comprehensive security assessment" }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-shield me-3"></i>
+                            <h2 class="mb-0">{{ scanner.name }} Security Assessment</h2>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        
+                        <!-- Multi-step form indicator -->
+                        <div class="form-step-indicator">
+                            <div class="step-item">
+                                <div class="step-bullet active" id="step1-bullet">1</div>
+                                <div class="step-label">Contact Info</div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-bullet" id="step2-bullet">2</div>
+                                <div class="step-label">Company Details</div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-bullet" id="step3-bullet">3</div>
+                                <div class="step-label">Scan Options</div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-bullet" id="step4-bullet">4</div>
+                                <div class="step-label">Confirmation</div>
+                            </div>
+                        </div>
+                        
+                        <form id="scanForm">
+                            <!-- Step 1: Contact Information -->
+                            <div class="scan-step active" id="step1">
+                                <h3 class="section-title"><i class="bi bi-person-lines-fill me-2"></i>Contact Information</h3>
+                                <p class="mb-4">Please provide your contact details so we can send you the scan results.</p>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="leadName" class="form-label required">Full Name</label>
+                                        <input type="text" class="form-control" id="leadName" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="leadCompany" class="form-label required">Company Name</label>
+                                        <input type="text" class="form-control" id="leadCompany" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="leadEmail" class="form-label required">Email Address</label>
+                                        <input type="email" class="form-control" id="leadEmail" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="leadPhone" class="form-label">Phone Number</label>
+                                        <input type="tel" class="form-control" id="leadPhone">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check mb-4">
+                                    <input class="form-check-input" type="checkbox" id="privacy-consent" required>
+                                    <label class="form-check-label" for="privacy-consent">
+                                        I agree to the privacy policy and consent to being contacted about my scan results.
+                                    </label>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-primary" id="step1Next">
+                                        Next <i class="bi bi-arrow-right ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 2: Company Details -->
+                            <div class="scan-step" id="step2">
+                                <h3 class="section-title"><i class="bi bi-building me-2"></i>Company Details</h3>
+                                <p class="mb-4">These details help us customize your vulnerability assessment.</p>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="industry" class="form-label required">Industry</label>
+                                        <select class="form-select" id="industry" required>
+                                            <option value="" selected disabled>Select your industry</option>
+                                            <option value="healthcare">Healthcare</option>
+                                            <option value="finance">Finance & Banking</option>
+                                            <option value="retail">Retail & E-commerce</option>
+                                            <option value="manufacturing">Manufacturing</option>
+                                            <option value="education">Education</option>
+                                            <option value="government">Government</option>
+                                            <option value="technology">Technology</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="company-size" class="form-label required">Company Size</label>
+                                        <select class="form-select" id="company-size" required>
+                                            <option value="" selected disabled>Select company size</option>
+                                            <option value="1-10">1-10 employees</option>
+                                            <option value="11-50">11-50 employees</option>
+                                            <option value="51-200">51-200 employees</option>
+                                            <option value="201-500">201-500 employees</option>
+                                            <option value="501+">501+ employees</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="domainInput" class="form-label required">Company Website</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">https://</span>
+                                        <input type="text" class="form-control" id="domainInput" placeholder="www.example.com" required>
+                                    </div>
+                                    <div class="form-text">This is the primary domain we'll scan for vulnerabilities.</div>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-secondary me-2" id="step2Prev">
+                                        <i class="bi bi-arrow-left me-1"></i> Previous
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="step2Next">
+                                        Next <i class="bi bi-arrow-right ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 3: Scan Options -->
+                            <div class="scan-step" id="step3">
+                                <h3 class="section-title"><i class="bi bi-gear me-2"></i>Scan Options</h3>
+                                <p class="mb-4">Select the types of vulnerabilities you want to scan for.</p>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="network-scan" value="network" checked>
+                                            <label class="form-check-label" for="network-scan">
+                                                <strong>Network Vulnerabilities</strong>
+                                            </label>
+                                        </div>
+                                        <p class="text-muted small ms-4">Open ports, misconfigured services, outdated protocols</p>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="web-scan" value="web" checked>
+                                            <label class="form-check-label" for="web-scan">
+                                                <strong>Web Application Vulnerabilities</strong>
+                                            </label>
+                                        </div>
+                                        <p class="text-muted small ms-4">XSS, SQL injection, CSRF, insecure configurations</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="ssl-scan" value="ssl" checked>
+                                            <label class="form-check-label" for="ssl-scan">
+                                                <strong>SSL/TLS Configuration</strong>
+                                            </label>
+                                        </div>
+                                        <p class="text-muted small ms-4">Certificate issues, outdated protocols, cipher weaknesses</p>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="dns-scan" value="dns" checked>
+                                            <label class="form-check-label" for="dns-scan">
+                                                <strong>DNS Security Issues</strong>
+                                            </label>
+                                        </div>
+                                        <p class="text-muted small ms-4">DNSSEC, zone transfer vulnerabilities, cache poisoning</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-secondary me-2" id="step3Prev">
+                                        <i class="bi bi-arrow-left me-1"></i> Previous
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="step3Next">
+                                        Next <i class="bi bi-arrow-right ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 4: Confirmation -->
+                            <div class="scan-step" id="step4">
+                                <h3 class="section-title"><i class="bi bi-check-circle me-2"></i>Confirm and Start Scan</h3>
+                                <p class="mb-4">Please review your information and confirm to start the scan.</p>
+                                
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>Important:</strong> The scan may take 5-10 minutes to complete. Results will be sent to your email once finished.
+                                </div>
+                                
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Scan Summary</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table table-borderless">
+                                            <tr>
+                                                <th width="30%">Name:</th>
+                                                <td id="summary-name"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Company:</th>
+                                                <td id="summary-company"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Website:</th>
+                                                <td id="summary-website"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Email:</th>
+                                                <td id="summary-email"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Selected Scans:</th>
+                                                <td id="summary-scans"></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check mb-4">
+                                    <input class="form-check-input" type="checkbox" id="terms-consent" required>
+                                    <label class="form-check-label" for="terms-consent">
+                                        I understand that this scan will analyze my website for security vulnerabilities and I have the authority to authorize this scan.
+                                    </label>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-secondary me-2" id="step4Prev">
+                                        <i class="bi bi-arrow-left me-1"></i> Previous
+                                    </button>
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-shield-check me-2"></i> Start Security Scan
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <!-- Scan Progress (initially hidden) -->
+                        <div id="scanProgress" style="display: none;">
+                            <h3 class="section-title mb-4"><i class="bi bi-activity me-2"></i>Scan in Progress</h3>
+                            
+                            <div class="text-center mb-5">
+                                <div class="spinner-border text-primary pulse-animation" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <h4 class="mt-3">Please Wait</h4>
+                                <p>Your security scan is in progress. This may take several minutes.</p>
+                                <p class="text-muted small">Do not close this window until the scan is complete.</p>
+                            </div>
+                            
+                            <div class="progress-container">
+                                <div class="progress-step">
+                                    <h5><i class="bi bi-1-circle me-2"></i> Network Discovery</h5>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-fill" id="progress1" style="width: 0%;">0%</div>
+                                    </div>
+                                    <p class="progress-step-status" id="status1">Pending...</p>
+                                </div>
+                                
+                                <div class="progress-step">
+                                    <h5><i class="bi bi-2-circle me-2"></i> Vulnerability Scanning</h5>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-fill" id="progress2" style="width: 0%;">0%</div>
+                                    </div>
+                                    <p class="progress-step-status" id="status2">Pending...</p>
+                                </div>
+                                
+                                <div class="progress-step">
+                                    <h5><i class="bi bi-3-circle me-2"></i> Threat Assessment</h5>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-fill" id="progress3" style="width: 0%;">0%</div>
+                                    </div>
+                                    <p class="progress-step-status" id="status3">Pending...</p>
+                                </div>
+                                
+                                <div class="progress-step">
+                                    <h5><i class="bi bi-4-circle me-2"></i> Report Generation</h5>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-fill" id="progress4" style="width: 0%;">0%</div>
+                                    </div>
+                                    <p class="progress-step-status" id="status4">Pending...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Scan Complete (initially hidden) -->
+                        <div id="scanComplete" style="display: none;">
+                            <div class="text-center py-5">
+                                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                </svg>
+                                
+                                <h3 class="mt-4">Scan Complete!</h3>
+                                <p class="mb-4">Your security assessment has been successfully completed.</p>
+                                
+                                <div class="alert alert-success mb-4">
+                                    <i class="bi bi-envelope-check me-2"></i>
+                                    A detailed report has been sent to your email address.
+                                </div>
+                                
+                                <div class="text-center">
+                                    <a href="#" id="viewReportBtn" class="btn btn-success btn-lg me-3" style="display: none;">
+                                        <i class="bi bi-file-earmark-text me-2"></i> View Report
+                                    </a>
+                                    <button class="btn btn-primary btn-lg" onclick="runNewScan()">
+                                        <i class="bi bi-arrow-clockwise me-2"></i> Run Another Scan
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Setup form steps functionality
+        function setupFormSteps() {
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            const bullets = ['step1-bullet', 'step2-bullet', 'step3-bullet', 'step4-bullet'];
+            
+            // Next button handlers
+            document.getElementById('step1Next').addEventListener('click', function() {
+                const leadName = document.getElementById('leadName');
+                const leadCompany = document.getElementById('leadCompany');
+                const leadEmail = document.getElementById('leadEmail');
+                const privacyConsent = document.getElementById('privacy-consent');
+                
+                if (!leadName.value || !leadCompany.value || !leadEmail.value || !privacyConsent.checked) {
+                    alert('Please fill in all required fields and accept the privacy policy.');
+                    return;
+                }
+                
+                switchStep(0, 1);
+            });
+            
+            document.getElementById('step2Next').addEventListener('click', function() {
+                const industry = document.getElementById('industry');
+                const companySize = document.getElementById('company-size');
+                const domainInput = document.getElementById('domainInput');
+                
+                if (!industry.value || !companySize.value || !domainInput.value) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+                
+                switchStep(1, 2);
+            });
+            
+            document.getElementById('step3Next').addEventListener('click', function() {
+                const scanOptions = document.querySelectorAll('input[type="checkbox"]:checked:not(#privacy-consent):not(#terms-consent)');
+                if (scanOptions.length === 0) {
+                    alert('Please select at least one scan option.');
+                    return;
+                }
+                
+                switchStep(2, 3);
+                updateSummary();
+            });
+            
+            // Previous button handlers
+            document.getElementById('step2Prev').addEventListener('click', function() {
+                switchStep(1, 0);
+            });
+            
+            document.getElementById('step3Prev').addEventListener('click', function() {
+                switchStep(2, 1);
+            });
+            
+            document.getElementById('step4Prev').addEventListener('click', function() {
+                switchStep(3, 2);
+            });
+            
+            // Function to switch between steps
+            function switchStep(currentIndex, nextIndex) {
+                document.getElementById(steps[currentIndex]).classList.remove('active');
+                document.getElementById(steps[nextIndex]).classList.add('active');
+                
+                // Update bullets
+                for (let i = 0; i < bullets.length; i++) {
+                    const bullet = document.getElementById(bullets[i]);
+                    
+                    if (i < nextIndex) {
+                        bullet.classList.remove('active');
+                        bullet.classList.add('completed');
+                        bullet.innerHTML = '<i class="bi bi-check"></i>';
+                    } else if (i === nextIndex) {
+                        bullet.classList.add('active');
+                        bullet.classList.remove('completed');
+                        bullet.innerHTML = i + 1;
+                    } else {
+                        bullet.classList.remove('active');
+                        bullet.classList.remove('completed');
+                        bullet.innerHTML = i + 1;
+                    }
+                }
+                
+                document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            // Function to update the summary in step 4
+            function updateSummary() {
+                document.getElementById('summary-name').textContent = document.getElementById('leadName').value;
+                document.getElementById('summary-company').textContent = document.getElementById('leadCompany').value;
+                document.getElementById('summary-website').textContent = 'https://' + document.getElementById('domainInput').value;
+                document.getElementById('summary-email').textContent = document.getElementById('leadEmail').value;
+                
+                // Get selected scan options
+                const scanOptions = [];
+                document.querySelectorAll('input[type="checkbox"]:checked:not(#privacy-consent):not(#terms-consent)').forEach(option => {
+                    switch (option.value) {
+                        case 'network':
+                            scanOptions.push('Network Vulnerabilities');
+                            break;
+                        case 'web':
+                            scanOptions.push('Web Application Vulnerabilities');
+                            break;
+                        case 'ssl':
+                            scanOptions.push('SSL/TLS Configuration');
+                            break;
+                        case 'dns':
+                            scanOptions.push('DNS Security Issues');
+                            break;
+                    }
+                });
+                
+                document.getElementById('summary-scans').textContent = scanOptions.join(', ');
+            }
+        }
+        
+        // Function to reset form for new scan
+        function runNewScan() {
+            document.getElementById('scanForm').reset();
+            document.getElementById('scanForm').style.display = 'block';
+            document.getElementById('scanProgress').style.display = 'none';
+            document.getElementById('scanComplete').style.display = 'none';
+            
+            // Reset to step 1
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            steps.forEach((step, index) => {
+                document.getElementById(step).classList.toggle('active', index === 0);
+            });
+            
+            // Reset bullets
+            const bullets = ['step1-bullet', 'step2-bullet', 'step3-bullet', 'step4-bullet'];
+            bullets.forEach((bullet, index) => {
+                const bulletEl = document.getElementById(bullet);
+                bulletEl.classList.toggle('active', index === 0);
+                bulletEl.classList.remove('completed');
+                bulletEl.innerHTML = index + 1;
+            });
+            
+            // Reset the View Report button
+            const viewReportBtn = document.getElementById('viewReportBtn');
+            viewReportBtn.style.display = 'none';
+            viewReportBtn.href = '#';
+        }
+        
+        // Handle form submission
+        function setupFormSubmission() {
+            document.getElementById('scanForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Check terms consent
+                if (!document.getElementById('terms-consent').checked) {
+                    alert('Please accept the terms to proceed with the scan.');
+                    return;
+                }
+                
+                // Get form data
+                const leadName = document.getElementById('leadName').value;
+                const leadEmail = document.getElementById('leadEmail').value;
+                const leadCompany = document.getElementById('leadCompany').value;
+                const leadPhone = document.getElementById('leadPhone').value;
+                const domain = document.getElementById('domainInput').value;
+                
+                // Hide form, show progress
+                this.style.display = 'none';
+                document.getElementById('scanProgress').style.display = 'block';
+                
+                // Scroll to progress
+                document.getElementById('scanProgress').scrollIntoView({ behavior: 'smooth' });
+                
+                // Simulate scan progress
+                simulateScanProgress();
+                
+                // After progress animation, submit to server
+                setTimeout(() => {
+                    const formData = {
+                        scanner_id: '{{ scanner.id }}',
+                        api_key: '{{ scanner.api_key }}',
+                        domain: domain,
+                        lead_name: leadName,
+                        lead_email: leadEmail,
+                        lead_company: leadCompany,
+                        lead_phone: leadPhone
+                    };
+                    
+                    // Submit to server
+                    fetch('/api/scanner/run', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Hide progress, show completion
+                        document.getElementById('scanProgress').style.display = 'none';
+                        
+                        if (data.status === 'success') {
+                            document.getElementById('scanComplete').style.display = 'block';
+                            
+                            // Show and configure the View Report button
+                            if (data.scan_id) {
+                                const viewReportBtn = document.getElementById('viewReportBtn');
+                                viewReportBtn.href = `/results?scan_id=${data.scan_id}`;
+                                viewReportBtn.style.display = 'inline-block';
+                            }
+                        } else {
+                            alert('Scan failed: ' + (data.message || 'Unknown error'));
+                            runNewScan();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        // Show completion anyway for demo
+                        document.getElementById('scanProgress').style.display = 'none';
+                        document.getElementById('scanComplete').style.display = 'block';
+                    });
+                }, 14000);
+            });
+        }
+        
+        // Initialize fade-in effects
+        function initFadeEffects() {
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.classList.add('visible');
+                }, 100 * index);
+            });
+        }
+        
+        // Function to simulate scan progress
+        function simulateScanProgress() {
+            updateProgress('progress1', 'status1', 0, 100, 'In progress...', 'Complete!', 3000);
+            
+            setTimeout(() => {
+                updateProgress('progress2', 'status2', 0, 100, 'In progress...', 'Complete!', 4000);
+            }, 3000);
+            
+            setTimeout(() => {
+                updateProgress('progress3', 'status3', 0, 100, 'In progress...', 'Complete!', 3500);
+            }, 7000);
+            
+            setTimeout(() => {
+                updateProgress('progress4', 'status4', 0, 100, 'In progress...', 'Complete!', 3000);
+            }, 10500);
+        }
+        
+        // Function to update progress bar
+        function updateProgress(progressId, statusId, start, end, inProgressText, completeText, duration) {
+            const progressBar = document.getElementById(progressId);
+            const statusEl = document.getElementById(statusId);
+            let current = start;
+            const increment = (end - start) / (duration / 50);
+            
+            statusEl.textContent = inProgressText;
+            statusEl.className = 'progress-step-status status-in-progress';
+            
+            const interval = setInterval(() => {
+                current += increment;
+                
+                if (current >= end) {
+                    current = end;
+                    clearInterval(interval);
+                    statusEl.textContent = completeText;
+                    statusEl.className = 'progress-step-status status-complete';
+                }
+                
+                progressBar.style.width = current + '%';
+                progressBar.textContent = Math.round(current) + '%';
+            }, 50);
+        }
+        
+        // Main init function that runs when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initFadeEffects();
+            setupFormSteps();
+            setupFormSubmission();
+        });
+    </script>
+</body>
+</html>

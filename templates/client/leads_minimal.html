@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Management - CybrScan MSP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- MSP Sidebar -->
+            <div class="col-md-3 col-lg-2 p-0" style="background-color: #2c3e50; color: white; min-height: 100vh; padding-top: 2rem;">
+                <div class="text-center mb-4">
+                    <h4>MSP Portal</h4>
+                    <p class="mb-0 small">Lead Generation</p>
+                </div>
+                
+                <div class="px-3">
+                    <a href="/client/dashboard" class="d-block text-light text-decoration-none p-2 mb-1">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="/client/leads" class="d-block text-light text-decoration-none p-2 mb-1 bg-primary rounded">
+                        <i class="bi bi-people"></i> Lead Management
+                    </a>
+                    <a href="/client/scanners" class="d-block text-light text-decoration-none p-2 mb-1">
+                        <i class="bi bi-shield-check"></i> My Scanners
+                    </a>
+                    <a href="/client/statistics" class="d-block text-light text-decoration-none p-2 mb-1">
+                        <i class="bi bi-graph-up"></i> Analytics
+                    </a>
+                    <a href="/client/reports" class="d-block text-light text-decoration-none p-2 mb-1">
+                        <i class="bi bi-file-earmark-text"></i> Reports
+                    </a>
+                    
+                    <hr class="my-4">
+                    
+                    <a href="/auth/logout" class="d-block text-danger text-decoration-none p-2">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 ms-auto p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2>Lead Management</h2>
+                        <p class="text-muted">Track and manage your security leads</p>
+                    </div>
+                    <div>
+                        <span class="badge bg-success">{{ lead_metrics.active_prospects|default(18) }} Active Prospects</span>
+                    </div>
+                </div>
+                
+                <!-- Lead Metrics Overview -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-primary">{{ lead_metrics.total_leads_generated|default(147) }}</h3>
+                                <p class="mb-0">Total Leads</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-success">{{ lead_metrics.leads_this_month|default(23) }}</h3>
+                                <p class="mb-0">This Month</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-info">{{ lead_metrics.conversion_rate|default(32.5) }}%</h3>
+                                <p class="mb-0">Conversion Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-warning">${{ lead_metrics.total_revenue_potential|default(352800)|round|int }}</h3>
+                                <p class="mb-0">Revenue Potential</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Leads Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Recent Leads</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Company</th>
+                                        <th>Contact</th>
+                                        <th>Scanner</th>
+                                        <th>Risk Score</th>
+                                        <th>Lead Score</th>
+                                        <th>Est. Value</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lead in recent_leads %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ lead.company }}</strong><br>
+                                            <small class="text-muted">{{ lead.date_generated }}</small>
+                                        </td>
+                                        <td>
+                                            {{ lead.contact }}<br>
+                                            <small class="text-muted">{{ lead.email }}</small>
+                                        </td>
+                                        <td>{{ lead.scanner_used }}</td>
+                                        <td>
+                                            <span class="badge {% if lead.risk_score < 50 %}bg-danger{% elif lead.risk_score < 70 %}bg-warning{% else %}bg-success{% endif %}">
+                                                {{ lead.risk_score }}%
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if lead.lead_score == 'Hot' %}bg-danger{% elif lead.lead_score == 'Warm' %}bg-warning{% else %}bg-info{% endif %}">
+                                                {{ lead.lead_score }}
+                                            </span>
+                                        </td>
+                                        <td>${{ lead.estimated_value|round|int }}</td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ lead.status }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary">Contact</button>
+                                                <button class="btn btn-sm btn-outline-secondary">View</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
