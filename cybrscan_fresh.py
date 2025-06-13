@@ -652,9 +652,21 @@ def dashboard():
     # Get user subscription limits
     user_limits = get_user_limits(current_user)
     
-    # MSP data structure 
+    # MSP data structure (use real user data only)
+    if hasattr(current_user, 'msp_data') and current_user.msp_data:
+        business_info = current_user.msp_data.get('business_info', {})
+    else:
+        business_info = {
+            'company_name': getattr(current_user, 'company_name', current_user.username),
+            'business_type': 'MSP (Managed Service Provider)',
+            'contact_person': current_user.username,
+            'website': '',
+            'phone': '',
+            'years_in_business': 1
+        }
+    
     msp_data = {
-        'business_info': getattr(current_user, 'msp_data', MSP_LEAD_DATA.get('demo', {})).get('business_info', {}),
+        'business_info': business_info,
         'lead_metrics': lead_metrics,
         'recent_leads': recent_leads
     }
@@ -677,7 +689,7 @@ def dashboard():
                          high_issues=len([s for s in user_scans if s.get('vulnerabilities_found', 0) >= 5]),
                          medium_issues=len([s for s in user_scans if s.get('vulnerabilities_found', 0) >= 3]),
                          recent_activities=recent_activities,
-                         scan_history=list(scans_db.values())[-5:],
+                         scan_history=sorted(user_scans, key=lambda x: x.get('timestamp', ''), reverse=True)[:5],
                          scanner_limit=user_limits['scanners'],
                          stats={'scanners_count': len(user_scanners)},
                          client=current_user,
