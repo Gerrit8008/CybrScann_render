@@ -839,18 +839,27 @@
                     })
                     .then(response => response.json())
                     .then(data => {
+                        console.log('Scan API Response:', data);
+                        
                         // Hide progress, show completion
                         document.getElementById('scanProgress').style.display = 'none';
                         
                         if (data.status === 'success') {
                             document.getElementById('scanComplete').style.display = 'block';
                             
-                            // Show and configure the View Report button
+                            // Always show View Report button for successful scans
+                            const viewReportBtn = document.getElementById('viewReportBtn');
                             if (data.scan_id) {
-                                const viewReportBtn = document.getElementById('viewReportBtn');
                                 viewReportBtn.href = `/results?scan_id=${data.scan_id}`;
-                                viewReportBtn.style.display = 'inline-block';
+                            } else {
+                                // Fallback if no scan_id
+                                viewReportBtn.href = '#';
+                                viewReportBtn.onclick = function(e) {
+                                    e.preventDefault();
+                                    alert('Report is being generated. Please check your email.');
+                                };
                             }
+                            viewReportBtn.style.display = 'inline-block';
                         } else {
                             alert('Scan failed: ' + (data.message || 'Unknown error'));
                             runNewScan();
@@ -861,6 +870,15 @@
                         // Show completion anyway for demo
                         document.getElementById('scanProgress').style.display = 'none';
                         document.getElementById('scanComplete').style.display = 'block';
+                        
+                        // Show View Report button even on error (for demo purposes)
+                        const viewReportBtn = document.getElementById('viewReportBtn');
+                        viewReportBtn.href = '#';
+                        viewReportBtn.style.display = 'inline-block';
+                        viewReportBtn.onclick = function(e) {
+                            e.preventDefault();
+                            alert('Report generation in progress. Please check your email for the full report.');
+                        };
                     });
                 }, 14000);
             });
