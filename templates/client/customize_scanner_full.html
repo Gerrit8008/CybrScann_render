@@ -669,6 +669,19 @@
                             document.getElementById('accentColorHex').value = data.accent;
                         }
                         
+                        // Auto-populate target domain from the URL
+                        try {
+                            const urlObj = new URL(url);
+                            const domain = urlObj.hostname.replace('www.', '');
+                            document.getElementById('businessDomain').value = domain;
+                        } catch (e) {
+                            // If URL parsing fails, try to extract domain from the input
+                            const domainMatch = url.match(/(?:https?:\/\/)?(?:www\.)?([^\/]+)/);
+                            if (domainMatch && domainMatch[1]) {
+                                document.getElementById('businessDomain').value = domainMatch[1];
+                            }
+                        }
+                        
                         this.updateLivePreview();
                         
                         // Show success message
