@@ -43,46 +43,56 @@ class SecurityScanner:
             'ip_info': self._get_ip_info(domain)
         }
         
-        # Run scans concurrently
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-            futures = {}
-            
-            if 'ssl' in scan_types:
-                futures['ssl'] = executor.submit(self.scan_ssl, domain)
-            if 'ports' in scan_types:
-                futures['ports'] = executor.submit(self.scan_ports, domain)
-            if 'dns' in scan_types:
-                futures['dns'] = executor.submit(self.scan_dns, domain)
-            if 'headers' in scan_types:
-                futures['headers'] = executor.submit(self.scan_headers, domain)
-            if 'vulnerabilities' in scan_types:
-                futures['vulnerabilities'] = executor.submit(self.scan_vulnerabilities, domain)
-            if 'subdomains' in scan_types:
-                futures['subdomains'] = executor.submit(self.scan_subdomains, domain)
-            if 'email_security' in scan_types:
-                futures['email_security'] = executor.submit(self.scan_email_security, domain)
-            if 'waf' in scan_types:
-                futures['waf'] = executor.submit(self.scan_waf, domain)
-            if 'technology' in scan_types:
-                futures['technology'] = executor.submit(self.scan_technology, domain)
-            if 'api_security' in scan_types:
-                futures['api_security'] = executor.submit(self.scan_api_security, domain)
-            if 'cloud_misconfig' in scan_types:
-                futures['cloud_misconfig'] = executor.submit(self.scan_cloud_misconfig, domain)
-            if 'compliance' in scan_types:
-                futures['compliance'] = executor.submit(self.scan_compliance, domain)
-            if 'performance' in scan_types:
-                futures['performance'] = executor.submit(self.scan_performance, domain)
-            
-            # Collect results
-            for scan_type, future in futures.items():
-                try:
-                    results['results'][scan_type] = future.result(timeout=self.timeout)
-                except Exception as e:
-                    results['results'][scan_type] = {
-                        'error': str(e),
-                        'status': 'failed'
-                    }
+        # Run scans sequentially to prevent hanging threads - DIRECT FIX
+        scan_functions = {}
+        if 'ssl' in scan_types:
+            scan_functions['ssl'] = self.scan_ssl
+        if 'ports' in scan_types:
+            scan_functions['ports'] = self.scan_ports
+        if 'dns' in scan_types:
+            scan_functions['dns'] = self.scan_dns
+        if 'headers' in scan_types:
+            scan_functions['headers'] = self.scan_headers
+        if 'vulnerabilities' in scan_types:
+            scan_functions['vulnerabilities'] = self.scan_vulnerabilities
+        if 'subdomains' in scan_types:
+            scan_functions['subdomains'] = self.scan_subdomains
+        if 'email_security' in scan_types:
+            scan_functions['email_security'] = self.scan_email_security
+        if 'waf' in scan_types:
+            scan_functions['waf'] = self.scan_waf
+        if 'technology' in scan_types:
+            scan_functions['technology'] = self.scan_technology
+        if 'api_security' in scan_types:
+            scan_functions['api_security'] = self.scan_api_security
+        if 'cloud_misconfig' in scan_types:
+            scan_functions['cloud_misconfig'] = self.scan_cloud_misconfig
+        if 'compliance' in scan_types:
+            scan_functions['compliance'] = self.scan_compliance
+        if 'performance' in scan_types:
+            scan_functions['performance'] = self.scan_performance
+        
+        # Execute scans sequentially with timeout protection
+        for scan_type, scan_function in scan_functions.items():
+            try:
+                import signal
+                
+                def timeout_handler(signum, frame):
+                    raise TimeoutError(f"Scan {scan_type} timed out")
+                
+                # Set alarm for each individual scan
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(10)  # 10 second timeout per scan
+                
+                results['results'][scan_type] = scan_function(domain)
+                signal.alarm(0)  # Clear alarm
+                
+            except Exception as e:
+                signal.alarm(0)  # Clear alarm
+                results['results'][scan_type] = {
+                    'error': str(e),
+                    'status': 'failed'
+                }
         
         # Calculate risk score
         results['risk_score'], results['vulnerabilities'] = self._calculate_risk_score(results['results'], results.get('ip_info'))
