@@ -939,7 +939,9 @@ def admin_clients():
                 'subscription': user.subscription_level,
                 'scanners': len(user_scanners),
                 'scans': len(user_scans),
-                'created_at': getattr(user, 'created_at', 'Unknown')[:10] if hasattr(user, 'created_at') else 'Unknown'
+                'created_at': getattr(user, 'created_at', 'Unknown')[:10] if hasattr(user, 'created_at') else 'Unknown',
+                'phone': getattr(user, 'contact_phone', 'N/A'),
+                'domain': getattr(user, 'business_domain', 'N/A')
             })
     
     return render_template('admin/client-management.html',
