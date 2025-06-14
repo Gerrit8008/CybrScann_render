@@ -925,9 +925,12 @@ def admin_clients():
         if user.role == 'client':
             # Count user's scanners and scans
             user_scanners = [s for s in scanners_db.values() if s.get('user_id') == user_id]
-            user_scans = [scan for scan in scans_db.values() 
-                         if any(scanner.get('id') == scan.get('scanner_id') and scanner.get('user_id') == user_id 
-                               for scanner in scanners_db.values())]
+            user_scans = []
+            for scan in scans_db.values():
+                for scanner in scanners_db.values():
+                    if scanner.get('id') == scan.get('scanner_id') and scanner.get('user_id') == user_id:
+                        user_scans.append(scan)
+                        break
             
             real_clients.append({
                 'id': user.id,
