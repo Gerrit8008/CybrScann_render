@@ -116,7 +116,7 @@
                                     </div>
                                     <h6 class="mb-0">Monthly Revenue</h6>
                                 </div>
-                                <div class="stat-value">${{ dashboard_stats.monthly_revenue|default('4,{{ item.count|default(0) }}') }}</div>
+                                <div class="stat-value">${{ dashboard_stats.monthly_revenue|default('0.00') }}</div>
                                 <p class="text-success mb-0"><i class="bi bi-arrow-up"></i> 15% increase</p>
                             </div>
                         </div>
@@ -147,7 +147,7 @@
                                 <a href="/admin/users" class="btn btn-sm btn-outline-primary">Manage Users</a>
                             </div>
                             <div class="card-body">
-                                <div class="chart-container" style="height: {{ item.count|default(0) }}px;">
+                                <div class="chart-container" style="height: 300px;">
                                     <canvas id="userActivityChart"></canvas>
                                 </div>
                             </div>
@@ -160,7 +160,7 @@
                                 <h5 class="mb-0">User Distribution</h5>
                             </div>
                             <div class="card-body">
-                                <div class="chart-container" style="height: {{ item.count|default(0) }}px;">
+                                <div class="chart-container" style="height: 300px;">
                                     <canvas id="userDistributionChart"></canvas>
                                 </div>
                             </div>
@@ -642,7 +642,7 @@ bg-danger{% endif %}">
                         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                         datasets: [{
                             label: 'Scans',
-                            data: [150, 210, 180, {{ item.count|default(0) }}, 300, 320],
+                            data: [150, 210, 180, {{ dashboard_stats.total_scans|default(0) }}, 300, 320],
                             borderColor: '#02054c',
                             backgroundColor: 'rgba(255, 105, 0, 0.1)',
                             tension: 0.3,
