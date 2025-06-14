@@ -355,223 +355,44 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="client-logo me-3">AC
-                                                  </div>
-                                                <div>
-                                                    <div class="fw-bold">Acme Corporation</div>
-                                                    <div class="text-muted small">Since May 12, 2025</div>
+                                    {% if clients %}
+                                        {% for client in clients %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="client-logo me-3">{{ client.name[:2]|upper }}</div>
+                                                    <div>
+                                                        <div class="fw-bold">{{ client.name }}</div>
+                                                        <div class="text-muted small">Since {{ client.created_at }}</div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td>Security Checker</td>
-                                        <td>admin@acmecorp.com</td>
-                                        <td>#</td>
-                                        <td><span class="subscription-badge subscription-pro">Pro</span></td>
-                                        <td><span class="badge bg-success">Active</span></td>
-                                        <td>248 <span class="scan-count">+12</span></td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <button class="client-action" data-bs-toggle="tooltip" title="Edit">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="View">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="More">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="client-logo me-3">TS</div>
-                                                <div>
-                                                    <div class="fw-bold">TechFlow Solutions</div>
-                                                    <div class="text-muted small">Since Apr 5, 2025</div>
+                                            </td>
+                                            <td>{{ client.scanners }} scanners</td>
+                                            <td>{{ client.email }}</td>
+                                            <td>{{ client.email.split('@')[0] }}.yourscannerdomain.com</td>
+                                            <td><span class="subscription-badge subscription-{{ client.subscription }}">{{ client.subscription|title }}</span></td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                            <td>{{ client.scans }}</td>
+                                            <td>
+                                                <div class="d-flex">
+                                                    <button class="client-action" data-bs-toggle="tooltip" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="client-action" data-bs-toggle="tooltip" title="View">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    <button class="client-action" data-bs-toggle="tooltip" title="More">
+                                                        <i class="bi bi-three-dots-vertical"></i>
+                                                    </button>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td>TF Security Scanner</td>
-                                        <td>security@techflow.io</td>
-                                        <td>techflow.yourscannerdomain.com</td>
-                                        <td><span class="subscription-badge subscription-basic">Basic</span></td>
-                                        <td><span class="badge bg-success">Active</span></td>
-                                        <td>78 <span class="scan-count">+5</span></td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <button class="client-action" data-bs-toggle="tooltip" title="Edit">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="View">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="More">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="client-logo me-3">GI</div>
-                                                <div>
-                                                    <div class="fw-bold">Global Innovations</div>
-                                                    <div class="text-muted small">Since Mar 22, 2025</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>Security First</td>
-                                        <td>it@globalinnovations.com</td>
-                                        <td>global-innovations.yourscannerdomain.com</td>
-                                        <td><span class="subscription-badge subscription-enterprise">Enterprise</span></td>
-                                        <td><span class="badge bg-success">Active</span></td>
-                                        <td>512 <span class="scan-count">+34</span></td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <button class="client-action" data-bs-toggle="tooltip" title="Edit">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="View">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="More">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="client-logo me-3">SS</div>
-                                                <div>
-                                                    <div class="fw-bold">Stellar Services</div>
-                                                    <div class="text-muted small">Since Apr 28, 2025</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>Stellar Secure</td>
-                                        <td>contact@stellarservices.net</td>
-                                        <td>stellar-services.yourscannerdomain.com</td>
-                                        <td><span class="subscription-badge subscription-basic">Basic</span></td>
-                                        <td><span class="badge bg-warning text-dark">Pending</span></td>
-                                        <td>0</td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <button class="client-action" data-bs-toggle="tooltip" title="Edit">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="View">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="More">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="client-logo me-3">QD</div>
-                                                <div>
-                                                    <div class="fw-bold">Quantum Data</div>
-                                                    <div class="text-muted small">Since Feb 15, 2025</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>Quantum Security</td>
-                                        <td>security@quantumdata.io</td>
-                                        <td>quantum-data.yourscannerdomain.com</td>
-                                        <td><span class="subscription-badge subscription-pro">Pro</span></td>
-                                        <td><span class="badge bg-success">Active</span></td>
-                                        <td>165 <span class="scan-count">+8</span></td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <button class="client-action" data-bs-toggle="tooltip" title="Edit">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="View">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="More">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="client-logo me-3">BT</div>
-                                                <div>
-                                                    <div class="fw-bold">BlueTech Industries</div>
-                                                    <div class="text-muted small">Since Jan 8, 2025</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>BlueScan</td>
-                                        <td>admin@bluetech.com</td>
-                                        <td>bluetech.yourscannerdomain.com</td>
-                                        <td><span class="subscription-badge subscription-pro">Pro</span></td>
-                                        <td><span class="badge bg-success">Active</span></td>
-                                        <td>203 <span class="scan-count">+15</span></td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <button class="client-action" data-bs-toggle="tooltip" title="Edit">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="View">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="More">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="client-logo me-3">NH</div>
-                                                <div>
-                                                    <div class="fw-bold">North Healthcare</div>
-                                                    <div class="text-muted small">Since Mar 10, 2025</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>HealthSecure</td>
-                                        <td>it@northhealthcare.org</td>
-                                        <td>north-healthcare.yourscannerdomain.com</td>
-                                        <td><span class="subscription-badge subscription-enterprise">Enterprise</span></td>
-                                        <td><span class="badge bg-success">Active</span></td>
-                                        <td>327 <span class="scan-count">+21</span></td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <button class="client-action" data-bs-toggle="tooltip" title="Edit">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="View">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                <button class="client-action" data-bs-toggle="tooltip" title="More">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted py-4">No clients yet - waiting for real users</td>
+                                        </tr>
+                                    {% endif %}
                                 </tbody>
                             </table>
                         </div>

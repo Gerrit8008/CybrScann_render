@@ -204,42 +204,7 @@
                                                 {% endfor %}
                                             {% else %}
                                                 <tr>
-                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
-                                                </tr>
-<tr>
-                                                    <td>admin</td>
-                                                    <td>admin@scannerplatform.com</td>
-                                                    <td><span class="badge bg-dark">admin</span></td>
-                                                    <td>192.168.1.101</td>
-                                                    <td>Today, 10:25 AM</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>jsmith</td>
-                                                    <td>No data</td>
-                                                    <td><span class="badge bg-info">client</span></td>
-                                                    <td>203.0.113.42</td>
-                                                    <td>Today, 9:14 AM</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>mrogers</td>
-                                                    <td>mike@globalinnovations.com</td>
-                                                    <td><span class="badge bg-info">client</span></td>
-                                                    <td>198.51.100.73</td>
-                                                    <td>Yesterday, 4:37 PM</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>support</td>
-                                                    <td>support@scannerplatform.com</td>
-                                                    <td><span class="badge bg-dark">admin</span></td>
-                                                    <td>192.168.1.105</td>
-                                                    <td>Yesterday, 2:18 PM</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>lchen</td>
-                                                    <td>lucy@techflow.io</td>
-                                                    <td><span class="badge bg-info">client</span></td>
-                                                    <td>172.16.24.98</td>
-                                                    <td>May 7, 2025, 11:05 AM</td>
+                                                    <td colspan="5" class="text-center text-muted py-4">No recent activity yet</td>
                                                 </tr>
                                             {% endif %}
                                         </tbody>
@@ -372,31 +337,7 @@ bg-danger{% endif %}">
                                                 {% endfor %}
                                             {% else %}
                                                 <tr>
-                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
-                                                </tr>
-<tr>
-                                                    <td>TechFlow Solutions</td>
-                                                    <td>TF Security Scanner</td>
-                                                    <td><span class="subscription-badge subscription-basic">Basic</span></td>
-                                                    <td><span class="badge bg-success">Active</span></td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Global Innovations</td>
-                                                    <td>Security First</td>
-                                                    <td><span class="subscription-badge subscription-enterprise">Enterprise</span></td>
-                                                    <td><span class="badge bg-success">Active</span></td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Stellar Services</td>
-                                                    <td>Stellar Secure</td>
-                                                    <td><span class="subscription-badge subscription-basic">Basic</span></td>
-                                                    <td><span class="badge bg-warning text-dark">Pending</span></td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Quantum Data</td>
-                                                    <td>Quantum Security</td>
-                                                    <td><span class="subscription-badge subscription-pro">Pro</span></td>
-                                                    <td><span class="badge bg-success">Active</span></td>
+                                                    <td colspan="4" class="text-center text-muted py-4">No clients yet</td>
                                                 </tr>
                                             {% endif %}
                                         </tbody>
@@ -425,56 +366,13 @@ bg-danger{% endif %}">
                                     </div>
                                     {% endfor %}
                                 {% else %}
-                                                <tr>
-                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
-                                                </tr>
-<div class="activity-item">
-                                        <div class="activity-icon">
-                                            <i class="bi bi-plus-circle text-success"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <div>New client <strong>Stellar Services</strong> registered</div>
-                                            <div class="activity-time">2 hours ago</div>
-                                        </div>
-                                    </div>
-                                    
                                     <div class="activity-item">
                                         <div class="activity-icon">
-                                            <i class="bi bi-credit-card text-primary"></i>
+                                            <i class="bi bi-info-circle text-muted"></i>
                                         </div>
                                         <div class="activity-content">
-                                            <div>No recent activity</div>
-                                            <div class="activity-time">5 hours ago</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="activity-item">
-                                        <div class="activity-icon">
-                                            <i class="bi bi-search text-info"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <div>50 new scans completed for <strong>Global Innovations</strong></div>
-                                            <div class="activity-time">Yesterday</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="activity-item">
-                                        <div class="activity-icon">
-                                            <i class="bi bi-globe2 text-warning"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <div>New scanner deployed for <strong>TechFlow Solutions</strong></div>
-                                            <div class="activity-time">Yesterday</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="activity-item">
-                                        <div class="activity-icon">
-                                            <i class="bi bi-gear text-secondary"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <div>System maintenance completed</div>
-                                            <div class="activity-time">2 days ago</div>
+                                            <div>No recent activity - waiting for real users</div>
+                                            <div class="activity-time">System ready</div>
                                         </div>
                                     </div>
                                 {% endif %}
@@ -713,7 +611,7 @@ bg-danger{% endif %}">
             // Function to load login statistics from API
             function fetchLoginStats() {
                 // This would be an actual API call in a real implementation
-                // For demo, we're using the data already in the charts
+                // Using real data from backend
                 console.log("Fetching login statistics...");
                 
                 // If you have a real API endpoint, uncomment this code:
