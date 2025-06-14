@@ -916,10 +916,13 @@ def admin_clients():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Get real client data (exclude demo users)
+    # Get real client data (exclude ALL demo users)
     real_clients = []
     for user_id, user in users.items():
-        if user.role == 'client' and user_id != 'demo':
+        # Skip ALL demo accounts: by ID, email, or email pattern
+        if user_id == 'demo' or user.email == 'demo@example.com' or user.email.startswith('demo') or '@example.com' in user.email:
+            continue
+        if user.role == 'client':
             # Count user's scanners and scans
             user_scanners = [s for s in scanners_db.values() if s.get('user_id') == user_id]
             user_scans = [scan for scan in scans_db.values() 
@@ -948,11 +951,14 @@ def admin_subscriptions():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Get real subscription data (exclude demo users)
+    # Get real subscription data (exclude ALL demo users)
     real_subscriptions = []
     
     for user_id, user in users.items():
-        if user.role == 'client' and user_id != 'demo':
+        # Skip ALL demo accounts: by ID, email, or email pattern
+        if user_id == 'demo' or user.email == 'demo@example.com' or user.email.startswith('demo') or '@example.com' in user.email:
+            continue
+        if user.role == 'client':
             # Get subscription tier details
             tier_info = SUBSCRIPTION_TIERS.get(user.subscription_level, SUBSCRIPTION_TIERS['basic'])
             
@@ -981,12 +987,37 @@ def admin_reports():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Get real data for reports (exclude demo data)
-    real_users = [user for user_id, user in users.items() if user.role == 'client' and user_id != 'demo']
-    real_scans = [scan for scan in scans_db.values() 
-                 if any(s.get('user_id') != 'demo' for s in scanners_db.values() 
-                       if s.get('id') == scan.get('scanner_id'))]
-    real_leads = [lead for lead in leads_db.values() if lead.get('user_id') != 'demo']
+    # Get real data for reports (exclude ALL demo data)
+    real_users = []
+    for user_id, user in users.items():
+        # Skip ALL demo accounts: by ID, email, or email pattern
+        if user_id == 'demo' or user.email == 'demo@example.com' or user.email.startswith('demo') or '@example.com' in user.email:
+            continue
+        if user.role == 'client':
+            real_users.append(user)
+    # Get real scans (exclude demo scans)
+    real_scans = []
+    for scan in scans_db.values():
+        scanner = scanners_db.get(scan.get('scanner_id'))
+        if scanner:
+            user_id = scanner.get('user_id')
+            # Skip if demo user or demo email
+            if user_id == 'demo':
+                continue
+            if user_id in users and (users[user_id].email == 'demo@example.com' or users[user_id].email.startswith('demo') or '@example.com' in users[user_id].email):
+                continue
+            real_scans.append(scan)
+    
+    # Get real leads (exclude demo leads)  
+    real_leads = []
+    for lead in leads_db.values():
+        user_id = lead.get('user_id')
+        # Skip if demo user or demo email
+        if user_id == 'demo':
+            continue
+        if user_id in users and (users[user_id].email == 'demo@example.com' or users[user_id].email.startswith('demo') or '@example.com' in users[user_id].email):
+            continue
+        real_leads.append(lead)
     
     # Calculate current month stats
     current_month = datetime.now().strftime('%Y-%m')
