@@ -719,11 +719,26 @@ def admin_dashboard():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Get real clients (exclude demo users)
-    real_users = [user for user_id, user in users.items() if user.role == 'client' and user_id != 'demo']
+    # Get real clients (exclude demo users) - CRITICAL: Filter out ALL demo data
+    real_users = []
+    for user_id, user in users.items():
+        # Skip ALL demo accounts
+        if user_id == 'demo' or user.email == 'demo@example.com' or user.email.startswith('demo'):
+            continue
+        if user.role == 'client':
+            real_users.append(user)
     
-    # Get real scanners (exclude demo scanners)
-    real_scanners = [scanner for scanner in scanners_db.values() if scanner.get('user_id') != 'demo']
+    # Get real scanners (exclude demo scanners) - CRITICAL: Double check owner
+    real_scanners = []
+    for scanner in scanners_db.values():
+        user_id = scanner.get('user_id')
+        # Skip if demo user
+        if user_id == 'demo':
+            continue
+        # Also skip if owner is demo by email
+        if user_id in users and (users[user_id].email == 'demo@example.com' or users[user_id].email.startswith('demo')):
+            continue
+        real_scanners.append(scanner)
     
     # Get real scans (exclude demo scans)
     real_scans = [scan for scan in scans_db.values() 
@@ -828,7 +843,8 @@ def admin_users():
     admin_users = []
     
     for user_id, user in users.items():
-        if user_id == 'demo':  # Skip demo user completely
+        # Skip ALL demo users completely
+        if user_id == 'demo' or user.email == 'demo@example.com' or user.email.startswith('demo'):
             continue
             
         user_data = {
@@ -861,25 +877,32 @@ def admin_scanners():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Get real scanner data (exclude demo scanners)
+    # Get real scanner data (exclude ALL demo scanners) - CRITICAL FIX
     real_scanners = []
     for scanner in scanners_db.values():
-        if scanner.get('user_id') != 'demo':
-            # Get owner info
-            owner = users.get(scanner.get('user_id'))
-            owner_email = owner.email if owner else 'Unknown'
-            
-            # Count scans for this scanner
-            scanner_scans = [scan for scan in scans_db.values() if scan.get('scanner_id') == scanner.get('id')]
-            
-            real_scanners.append({
-                'id': scanner.get('id'),
-                'name': scanner.get('name', 'Unknown Scanner'),
-                'owner': owner_email,
-                'scans': len(scanner_scans),
-                'status': scanner.get('status', 'active'),
-                'created_at': scanner.get('created_at', 'Unknown')[:10] if scanner.get('created_at') else 'Unknown'
-            })
+        user_id = scanner.get('user_id')
+        # Skip demo scanners
+        if user_id == 'demo':
+            continue
+        # Also skip if owner is demo by email
+        if user_id in users and (users[user_id].email == 'demo@example.com' or users[user_id].email.startswith('demo')):
+            continue
+        
+        # Get owner info
+        owner = users.get(scanner.get('user_id'))
+        owner_email = owner.email if owner else 'Unknown'
+        
+        # Count scans for this scanner
+        scanner_scans = [scan for scan in scans_db.values() if scan.get('scanner_id') == scanner.get('id')]
+        
+        real_scanners.append({
+            'id': scanner.get('id'),
+            'name': scanner.get('name', 'Unknown Scanner'),
+            'owner': owner_email,
+            'scans': len(scanner_scans),
+            'status': scanner.get('status', 'active'),
+            'created_at': scanner.get('created_at', 'Unknown')[:10] if scanner.get('created_at') else 'Unknown'
+        })
     
     return render_template('admin/scanner-management_minimal.html',
                          user=current_user,
@@ -2197,6 +2220,14 @@ def debug_scanners():
         'real_scanner_count': len(real_scanners),
         'demo_scanner_count': len(demo_scanners)
     })
+
+# Import database fix for admin panel
+try:
+    from admin_database_fix import fix_admin_dashboard
+    app = fix_admin_dashboard(app, users, scanners_db, leads_db, scans_db, SUBSCRIPTION_TIERS)
+    print("✅ Admin dashboard database integration loaded")
+except Exception as e:
+    print(f"⚠️ Admin database fix not loaded: {e}")
 
 if __name__ == '__main__':
     app.run(debug=True)
