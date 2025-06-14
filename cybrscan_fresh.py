@@ -526,8 +526,8 @@ def logout():
 def dashboard():
     """User dashboard"""
     # Check if admin should go to admin dashboard
-    if current_user.role == "admin":
-        return redirect(url_for("admin_dashboard"))
+    if current_user.role == 'admin':
+        return redirect(url_for('admin_dashboard'))
     # Get user's scanners
     user_scanners = [scanner for scanner in scanners_db.values() 
                     if scanner.get('user_id') == current_user.id]
@@ -1791,13 +1791,16 @@ def create_scanner():
                 'preview_url': preview_url
             })
         else:
+            # Determine redirect based on user role
+            redirect_url = '/admin/dashboard' if current_user.role == 'admin' else '/client/scanners'
+            
             return jsonify({
                 'status': 'success',
                 'message': 'Scanner created successfully',
                 'scanner_id': scanner_id,
                 'deployment_url': deployment_url,
                 'api_key': api_key,
-                'redirect_url': '/client/scanners'
+                'redirect_url': redirect_url
             })
             
     except Exception as e:
@@ -2002,12 +2005,15 @@ def update_scanner(scanner_id):
                 'preview_url': preview_url
             })
         else:
+            # Determine redirect based on user role  
+            redirect_url = '/admin/dashboard' if current_user.role == 'admin' else '/client/scanners'
+            
             return jsonify({
                 'status': 'success',
                 'message': 'Scanner updated successfully',
                 'scanner_id': scanner_id,
                 'deployment_url': deployment_url,
-                'redirect_url': '/client/scanners'
+                'redirect_url': redirect_url
             })
             
     except Exception as e:
