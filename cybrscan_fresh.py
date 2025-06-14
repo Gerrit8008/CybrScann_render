@@ -525,6 +525,9 @@ def logout():
 @login_required
 def dashboard():
     """User dashboard"""
+    # Check if admin should go to admin dashboard
+    if current_user.role == "admin":
+        return redirect(url_for("admin_dashboard"))
     # Get user's scanners
     user_scanners = [scanner for scanner in scanners_db.values() 
                     if scanner.get('user_id') == current_user.id]
@@ -876,6 +879,9 @@ def admin_users():
     """Admin user management page"""
     if current_user.role != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
+        # Redirect based on user role
+        if current_user.role == 'admin':
+            return redirect(url_for('admin_dashboard'))
         return redirect(url_for('dashboard'))
     
     # Get real users (exclude demo users and show admin separately)
@@ -915,6 +921,9 @@ def admin_scanners():
     """Admin scanner management page"""
     if current_user.role != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
+        # Redirect based on user role
+        if current_user.role == 'admin':
+            return redirect(url_for('admin_dashboard'))
         return redirect(url_for('dashboard'))
     
     # Get real scanner data (exclude ALL demo scanners) - CRITICAL FIX
@@ -954,6 +963,9 @@ def admin_clients():
     """Admin client management page"""
     if current_user.role != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
+        # Redirect based on user role
+        if current_user.role == 'admin':
+            return redirect(url_for('admin_dashboard'))
         return redirect(url_for('dashboard'))
     
     # Get real client data (exclude ALL demo users)
@@ -994,6 +1006,9 @@ def admin_subscriptions():
     """Admin subscription management page"""
     if current_user.role != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
+        # Redirect based on user role
+        if current_user.role == 'admin':
+            return redirect(url_for('admin_dashboard'))
         return redirect(url_for('dashboard'))
     
     # Get real subscription data (exclude ALL demo users)
@@ -1030,6 +1045,9 @@ def admin_reports():
     """Admin reports page"""
     if current_user.role != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
+        # Redirect based on user role
+        if current_user.role == 'admin':
+            return redirect(url_for('admin_dashboard'))
         return redirect(url_for('dashboard'))
     
     # Get real data for reports (exclude ALL demo data)
@@ -1159,6 +1177,9 @@ def admin_settings():
     """Admin settings page"""
     if current_user.role != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
+        # Redirect based on user role
+        if current_user.role == 'admin':
+            return redirect(url_for('admin_dashboard'))
         return redirect(url_for('dashboard'))
     
     # Sample settings data
