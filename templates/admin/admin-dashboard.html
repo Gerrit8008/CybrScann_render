@@ -56,7 +56,10 @@
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10 ms-auto main-content">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Dashboard</h2>
+                    <div>
+                        <h2>Admin Dashboard</h2>
+                        <p class="text-muted mb-0">Platform overview - Summary of all client dashboards</p>
+                    </div>
                     <div>
                         <span class="badge bg-primary">Admin</span>
                         <span class="ms-2">{{ user.username }}</span>
@@ -353,14 +356,14 @@ bg-danger{% endif %}">
                                 <h5 class="mb-0">Recent Activity</h5>
                             </div>
                             <div class="card-body p-0">
-                                {% if recent_activities %}
-                                    {% for activity in recent_activities %}
+                                {% if recent_activity %}
+                                    {% for activity in recent_activity %}
                                     <div class="activity-item">
                                         <div class="activity-icon">
-                                            <i class="bi {{ activity.icon_class }}"></i>
+                                            <i class="bi {{ activity.icon|default('bi-info-circle') }} {{ activity.color|default('text-muted') }}"></i>
                                         </div>
                                         <div class="activity-content">
-                                            <div>{{ activity.content|safe }}</div>
+                                            <div><strong>{{ activity.type }}:</strong> {{ activity.description }}</div>
                                             <div class="activity-time">{{ activity.time }}</div>
                                         </div>
                                     </div>

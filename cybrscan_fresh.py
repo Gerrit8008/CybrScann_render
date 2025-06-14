@@ -714,119 +714,159 @@ def client_dashboard():
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
-    """Admin dashboard"""
+    """Admin dashboard - COMPLETE SUMMARY of all client dashboards"""
     if current_user.role != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Get real clients (exclude demo users) - CRITICAL: Filter out ALL demo data
-    real_users = []
+    # ADMIN DASHBOARD: Aggregate data from ALL client dashboards
+    # This is completely separate from individual client dashboards
+    
+    # Get all real clients (exclude demo users)
+    real_clients = []
     for user_id, user in users.items():
         # Skip ALL demo accounts
-        if user_id == 'demo' or user.email == 'demo@example.com' or user.email.startswith('demo'):
+        if user_id == 'demo' or user.email == 'demo@example.com' or user.email.startswith('demo') or '@example.com' in user.email:
             continue
         if user.role == 'client':
-            real_users.append(user)
+            real_clients.append(user)
     
-    # Get real scanners (exclude demo scanners) - CRITICAL: Double check owner
-    real_scanners = []
+    # Get all real scanners from all clients
+    all_client_scanners = []
     for scanner in scanners_db.values():
         user_id = scanner.get('user_id')
-        # Skip if demo user
+        # Skip demo scanners
         if user_id == 'demo':
             continue
-        # Also skip if owner is demo by email
-        if user_id in users and (users[user_id].email == 'demo@example.com' or users[user_id].email.startswith('demo')):
+        # Skip if owner is demo
+        if user_id in users and (users[user_id].email == 'demo@example.com' or users[user_id].email.startswith('demo') or '@example.com' in users[user_id].email):
             continue
-        real_scanners.append(scanner)
+        all_client_scanners.append(scanner)
     
-    # Get real scans (exclude demo scans)
-    real_scans = [scan for scan in scans_db.values() 
-                 if any(s.get('user_id') != 'demo' for s in scanners_db.values() 
-                       if s.get('id') == scan.get('scanner_id'))]
+    # Get all real scans from all clients
+    all_client_scans = []
+    for scan in scans_db.values():
+        scanner = scanners_db.get(scan.get('scanner_id'))
+        if scanner:
+            user_id = scanner.get('user_id')
+            # Skip demo scans
+            if user_id == 'demo':
+                continue
+            if user_id in users and (users[user_id].email == 'demo@example.com' or users[user_id].email.startswith('demo') or '@example.com' in users[user_id].email):
+                continue
+            all_client_scans.append(scan)
     
-    # Get real leads (exclude demo leads)
-    real_leads = [lead for lead in leads_db.values() if lead.get('user_id') != 'demo']
+    # Get all real leads from all clients
+    all_client_leads = []
+    for lead in leads_db.values():
+        user_id = lead.get('user_id')
+        # Skip demo leads
+        if user_id == 'demo':
+            continue
+        if user_id in users and (users[user_id].email == 'demo@example.com' or users[user_id].email.startswith('demo') or '@example.com' in users[user_id].email):
+            continue
+        all_client_leads.append(lead)
     
-    # Calculate real statistics
-    total_clients = len(real_users)
-    total_scanners = len(real_scanners) 
-    total_scans = len(real_scans)
-    total_leads = len(real_leads)
+    # ADMIN SUMMARY STATISTICS - Aggregated from all client dashboards
+    total_clients = len(real_clients)
+    total_scanners = len(all_client_scanners)
+    total_scans = len(all_client_scans)
+    total_leads = len(all_client_leads)
     
-    # Calculate revenue from real subscriptions
-    monthly_revenue = sum(SUBSCRIPTION_TIERS.get(user.subscription_level, {}).get('price', 0) for user in real_users)
-    total_revenue = monthly_revenue * 6  # Estimate 6 months average
+    # Calculate total revenue from all client subscriptions
+    total_monthly_revenue = sum(SUBSCRIPTION_TIERS.get(client.subscription_level, {}).get('price', 0) for client in real_clients)
+    total_annual_revenue = total_monthly_revenue * 12
     
-    dashboard_stats = {
+    # Calculate system-wide metrics
+    total_vulnerabilities_found = sum(scan.get('vulnerabilities_found', 0) for scan in all_client_scans)
+    avg_security_score = sum(scan.get('risk_score', 0) for scan in all_client_scans) // max(1, len(all_client_scans)) if all_client_scans else 0
+    total_revenue_potential = sum(lead.get('estimated_value', 0) for lead in all_client_leads)
+    
+    # Admin dashboard stats (summary of entire platform)
+    admin_dashboard_stats = {
         'total_clients': total_clients,
         'total_scanners': total_scanners,
         'total_scans': total_scans,
         'total_leads': total_leads,
-        'total_revenue': total_revenue,
-        'monthly_revenue': monthly_revenue,
-        'active_subscriptions': total_clients,
-        'conversion_rate': (total_leads / max(1, total_scans)) * 100 if total_scans > 0 else 0,
-        'avg_scans_per_client': total_scans / max(1, total_clients) if total_clients > 0 else 0
+        'monthly_revenue': total_monthly_revenue,
+        'annual_revenue': total_annual_revenue,
+        'active_subscriptions': len([c for c in real_clients if c.subscription_level != 'basic']),
+        'avg_scans_per_client': total_scans / max(1, total_clients) if total_clients > 0 else 0,
+        'total_vulnerabilities': total_vulnerabilities_found,
+        'avg_security_score': avg_security_score,
+        'total_revenue_potential': total_revenue_potential,
+        'conversion_rate': (total_leads / max(1, total_scans)) * 100 if total_scans > 0 else 0
     }
     
-    # Get recent real activity (completely exclude demo data)
-    recent_activity = []
+    # Platform-wide recent activity (aggregated from all clients)
+    platform_activity = []
     
-    # Add recent client registrations (exclude demo)
-    for user in sorted(real_users, key=lambda x: getattr(x, 'created_at', ''), reverse=True)[:3]:
-        if hasattr(user, 'created_at') and user.created_at:
-            recent_activity.append({
-                'type': 'New Client', 
-                'description': f'{user.email} registered', 
-                'time': user.created_at[:16].replace('T', ' ')
+    # Recent client registrations
+    for client in sorted(real_clients, key=lambda x: getattr(x, 'created_at', '2024-01-01'), reverse=True)[:5]:
+        if hasattr(client, 'created_at') and client.created_at:
+            platform_activity.append({
+                'type': 'New Client Registration',
+                'description': f'New client: {getattr(client, "company_name", client.email)}',
+                'time': client.created_at[:16].replace('T', ' ') if isinstance(client.created_at, str) else client.created_at,
+                'icon': 'bi-person-plus',
+                'color': 'text-success'
             })
     
-    # Add recent scans (exclude demo scans)
-    for scan in sorted(real_scans, key=lambda x: x.get('timestamp', ''), reverse=True)[:3]:
+    # Recent scans across all clients
+    for scan in sorted(all_client_scans, key=lambda x: x.get('timestamp', ''), reverse=True)[:5]:
         if scan.get('timestamp'):
-            recent_activity.append({
-                'type': 'Scan Completed', 
-                'description': f'Security scan for {scan.get("domain", "unknown domain")}', 
-                'time': scan.get('timestamp', '')[:16].replace('T', ' ')
+            scanner = scanners_db.get(scan.get('scanner_id'))
+            owner_email = users[scanner.get('user_id')].email if scanner and scanner.get('user_id') in users else 'Unknown'
+            platform_activity.append({
+                'type': 'Security Scan',
+                'description': f'Scan completed for {scan.get("domain", "unknown")} by {owner_email}',
+                'time': scan.get('timestamp', '')[:16].replace('T', ' '),
+                'icon': 'bi-shield-check',
+                'color': 'text-info'
             })
     
-    # Add recent leads (exclude demo leads)
-    for lead in sorted(real_leads, key=lambda x: x.get('date_generated', ''), reverse=True)[:2]:
+    # Recent leads across all clients
+    for lead in sorted(all_client_leads, key=lambda x: x.get('date_generated', ''), reverse=True)[:3]:
         if lead.get('date_generated'):
-            recent_activity.append({
-                'type': 'New Lead', 
-                'description': f'Lead generated: {lead.get("company", "Unknown Company")}', 
-                'time': lead.get('date_generated', '') + ' 12:00'
+            owner_email = users[lead.get('user_id')].email if lead.get('user_id') in users else 'Unknown'
+            platform_activity.append({
+                'type': 'Lead Generated',
+                'description': f'Lead: {lead.get("company", "Unknown")} (by {owner_email})',
+                'time': lead.get('date_generated', '') + ' 12:00',
+                'icon': 'bi-bullseye',
+                'color': 'text-warning'
             })
     
-    # Sort by time and take top 5
-    recent_activity.sort(key=lambda x: x.get('time', ''), reverse=True)
-    recent_activity = recent_activity[:5]
+    # Sort platform activity by time and limit
+    platform_activity.sort(key=lambda x: x.get('time', ''), reverse=True)
+    platform_activity = platform_activity[:10]
     
-    # If no real activity, show a message instead of empty
-    if not recent_activity:
-        recent_activity = [{
-            'type': 'System', 
-            'description': 'No recent activity - waiting for first real users', 
-            'time': datetime.now().strftime('%Y-%m-%d %H:%M')
+    # If no activity, show system ready message
+    if not platform_activity:
+        platform_activity = [{
+            'type': 'System Status',
+            'description': 'Platform ready - waiting for client activity',
+            'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'icon': 'bi-check-circle',
+            'color': 'text-muted'
         }]
     
-    # Real subscription breakdown
-    subscription_breakdown = {}
+    # Platform subscription breakdown
+    platform_subscription_breakdown = {}
     for tier_name in SUBSCRIPTION_TIERS.keys():
-        tier_users = [u for u in real_users if u.subscription_level == tier_name]
+        tier_clients = [c for c in real_clients if c.subscription_level == tier_name]
         tier_price = SUBSCRIPTION_TIERS[tier_name]['price']
-        subscription_breakdown[tier_name] = {
-            'count': len(tier_users),
-            'revenue': len(tier_users) * tier_price
+        platform_subscription_breakdown[tier_name] = {
+            'count': len(tier_clients),
+            'revenue': len(tier_clients) * tier_price,
+            'percentage': (len(tier_clients) / max(1, total_clients)) * 100 if total_clients > 0 else 0
         }
     
     return render_template('admin/admin-dashboard.html', 
                          user=current_user,
-                         dashboard_stats=dashboard_stats,
-                         recent_activity=recent_activity,
-                         subscription_breakdown=subscription_breakdown,
+                         dashboard_stats=admin_dashboard_stats,
+                         recent_activity=platform_activity,
+                         subscription_breakdown=platform_subscription_breakdown,
                          subscription_levels=SUBSCRIPTION_TIERS)
 
 # Admin management routes
