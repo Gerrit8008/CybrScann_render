@@ -6,7 +6,12 @@ import os
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from scanner import SecurityScanner
+# TEMPORARY: Use quick scanner to avoid timeouts
+try:
+    from scanner_quick import SecurityScanner
+    print("Using QUICK scanner to prevent timeouts")
+except:
+    from scanner import SecurityScanner
 import secrets
 import re
 import random
