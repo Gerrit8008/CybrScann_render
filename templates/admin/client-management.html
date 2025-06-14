@@ -439,19 +439,19 @@
                                         <table class="table table-borderless">
                                             <tr>
                                                 <th width="40%">Company Name</th>
-                                                <td>Acme Corporation</td>
+                                                <td>{{ client.name|default('Unknown Company') }}</td>
                                             </tr>
                                             <tr>
                                                 <th>Contact Email</th>
-                                                <td>admin@acmecorp.com</td>
+                                                <td>{{ client.email|default('Unknown Email') }}</td>
                                             </tr>
                                             <tr>
                                                 <th>Contact Phone</th>
-                                                <td>555-123-4567</td>
+                                                <td>{{ client.phone|default('Unknown Phone') }}</td>
                                             </tr>
                                             <tr>
                                                 <th>Business Domain</th>
-                                                <td>acmecorp.com</td>
+                                                <td>{{ client.domain|default('Unknown Domain') }}</td>
                                             </tr>
                                         </table>
                                     </div>

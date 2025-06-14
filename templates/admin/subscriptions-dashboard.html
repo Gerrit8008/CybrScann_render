@@ -77,7 +77,7 @@
                     <div class="col-md-3">
                         <div class="card stat-card border-0 shadow-sm">
                             <div class="card-body text-center">
-                                <div class="stat-value text-success">{{ subscriptions|length|default('12') }}</div>
+                                <div class="stat-value text-success">{{ subscriptions|length|default('0') }}</div>
                                 <h6 class="mb-0">Active Subscriptions</h6>
                             </div>
                         </div>
@@ -85,7 +85,7 @@
                     <div class="col-md-3">
                         <div class="card stat-card border-0 shadow-sm">
                             <div class="card-body text-center">
-                                <div class="stat-value text-primary">$2,450</div>
+                                <div class="stat-value text-primary">${{ (subscriptions|length * 59)|default('0') }}</div>
                                 <h6 class="mb-0">Monthly Revenue</h6>
                             </div>
                         </div>
@@ -93,7 +93,7 @@
                     <div class="col-md-3">
                         <div class="card stat-card border-0 shadow-sm">
                             <div class="card-body text-center">
-                                <div class="stat-value text-warning">3</div>
+                                <div class="stat-value text-warning">0</div>
                                 <h6 class="mb-0">Expiring Soon</h6>
                             </div>
                         </div>
@@ -101,7 +101,7 @@
                     <div class="col-md-3">
                         <div class="card stat-card border-0 shadow-sm">
                             <div class="card-body text-center">
-                                <div class="stat-value text-info">85%</div>
+                                <div class="stat-value text-info">{{ ((subscriptions|length / 1)|round|int * 100) if subscriptions|length > 0 else 0 }}%</div>
                                 <h6 class="mb-0">Retention Rate</h6>
                             </div>
                         </div>
@@ -159,51 +159,8 @@
                                         </tr>
                                         {% endfor %}
                                     {% else %}
-                                                <tr>
-                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
-                                                </tr>
-<!-- Sample data when no subscriptions -->
                                         <tr>
-                                            <td>TechCorp Solutions</td>
-                                            <td><span class="badge bg-success">Premium</span></td>
-                                            <td><span class="badge bg-success">Active</span></td>
-                                            <td>2024-01-15</td>
-                                            <td>2024-12-15</td>
-                                            <td>$299/mo</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-primary">Edit</button>
-                                                    <button class="btn btn-outline-danger">Cancel</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>SecureNet Inc</td>
-                                            <td><span class="badge bg-secondary">Basic</span></td>
-                                            <td><span class="badge bg-success">Active</span></td>
-                                            <td>2024-02-01</td>
-                                            <td>2024-11-01</td>
-                                            <td>$99/mo</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-primary">Edit</button>
-                                                    <button class="btn btn-outline-danger">Cancel</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>DataGuard LLC</td>
-                                            <td><span class="badge bg-success">Premium</span></td>
-                                            <td><span class="badge bg-warning">Expiring</span></td>
-                                            <td>2023-12-01</td>
-                                            <td>2024-12-01</td>
-                                            <td>$299/mo</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-primary">Edit</button>
-                                                    <button class="btn btn-outline-success">Renew</button>
-                                                </div>
-                                            </td>
+                                            <td colspan="7" class="text-center text-muted py-4">No subscriptions yet - waiting for real users</td>
                                         </tr>
                                     {% endif %}
                                 </tbody>
