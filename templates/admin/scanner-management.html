@@ -418,7 +418,11 @@
                                                 </a>
                                             </td>
                                             <td>
-                                                <span class="status-badge {% if scanner.deploy_status == 'deployed' %}status-deployed{% elif scanner.deploy_status == 'pending' %}status-pending{% else %}status-inactive{% endif %}">
+                                                <span class="status-badge {% if scanner.deploy_status == 'deployed' %}status-deployed{% elif scanner.deploy_status == 'pending' %}status-pending{% else %}
+                                                <tr>
+                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
+                                                </tr>
+status-inactive{% endif %}">
                                                     {{ scanner.deploy_status|title }}
                                                 </span>
                                             </td>
@@ -450,7 +454,10 @@
                                         </tr>
                                         {% endfor %}
                                     {% else %}
-                                        <tr>
+                                                <tr>
+                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
+                                                </tr>
+<tr>
                                             <td colspan="7" class="text-center py-4">
                                                 <div class="text-muted">
                                                     <i class="bi bi-search fs-3 d-block mb-3"></i>
@@ -463,49 +470,7 @@
                                     
                                     <!-- Example rows - will be replaced by database data -->
                                     {% if not deployed_scanners or deployed_scanners.scanners|length == 0 %}
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="client-logo me-3">AC</div>
-                                                <div>
-                                                    <div class="fw-bold">Acme Corporation</div>
-                                                    <div class="text-muted small">acmecorp.com</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>Security Scanner Pro</td>
-                                        <td>
-                                            <a href="#" target="_blank">
-                                                acme.yourscannerdomain.com
-                                            </a>
-                                        </td>
-                                        <td><span class="status-badge status-deployed">Deployed</span></td>
-                                        <td>May 3, 2025</td>
-                                        <td>
-                                            <div class="scanner-stats">
-                                                <i class="bi bi-search"></i> 53
-                                            </div>
-                                            <div class="scanner-stats">
-                                                <i class="bi bi-clock-history"></i> Today
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <button class="scanner-action" data-bs-toggle="tooltip" title="View Scanner">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                <button class="scanner-action" data-bs-toggle="tooltip" title="Edit Scanner">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="scanner-action" data-bs-toggle="tooltip" title="Scanner Stats">
-                                                    <i class="bi bi-graph-up"></i>
-                                                </button>
-                                                <button class="scanner-action" data-bs-toggle="tooltip" title="More Options">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -629,7 +594,10 @@
                                     </a>
                                 </li>
                             {% else %}
-                                <li class="page-item disabled">
+                                                <tr>
+                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
+                                                </tr>
+<li class="page-item disabled">
                                     <a class="page-link" href="#" aria-label="Previous">
                                         <span aria-hidden="true">&laquo;</span>
                                     </a>

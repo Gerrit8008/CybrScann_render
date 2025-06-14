@@ -116,7 +116,7 @@
                                     </div>
                                     <h6 class="mb-0">Monthly Revenue</h6>
                                 </div>
-                                <div class="stat-value">${{ dashboard_stats.monthly_revenue|default('4,250') }}</div>
+                                <div class="stat-value">${{ dashboard_stats.monthly_revenue|default('4,{{ item.count|default(0) }}') }}</div>
                                 <p class="text-success mb-0"><i class="bi bi-arrow-up"></i> 15% increase</p>
                             </div>
                         </div>
@@ -147,7 +147,7 @@
                                 <a href="/admin/users" class="btn btn-sm btn-outline-primary">Manage Users</a>
                             </div>
                             <div class="card-body">
-                                <div class="chart-container" style="height: 250px;">
+                                <div class="chart-container" style="height: {{ item.count|default(0) }}px;">
                                     <canvas id="userActivityChart"></canvas>
                                 </div>
                             </div>
@@ -160,7 +160,7 @@
                                 <h5 class="mb-0">User Distribution</h5>
                             </div>
                             <div class="card-body">
-                                <div class="chart-container" style="height: 250px;">
+                                <div class="chart-container" style="height: {{ item.count|default(0) }}px;">
                                     <canvas id="userDistributionChart"></canvas>
                                 </div>
                             </div>
@@ -204,6 +204,9 @@
                                                 {% endfor %}
                                             {% else %}
                                                 <tr>
+                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
+                                                </tr>
+<tr>
                                                     <td>admin</td>
                                                     <td>admin@scannerplatform.com</td>
                                                     <td><span class="badge bg-dark">admin</span></td>
@@ -212,7 +215,7 @@
                                                 </tr>
                                                 <tr>
                                                     <td>jsmith</td>
-                                                    <td>john.smith@acmecorp.com</td>
+                                                    <td>No data</td>
                                                     <td><span class="badge bg-info">client</span></td>
                                                     <td>203.0.113.42</td>
                                                     <td>Today, 9:14 AM</td>
@@ -288,7 +291,11 @@
                                                         </a>
                                                     </td>
                                                     <td>
-                                                        <span class="badge {% if scanner.deploy_status == 'deployed' %}bg-success{% elif scanner.deploy_status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                                        <span class="badge {% if scanner.deploy_status == 'deployed' %}bg-success{% elif scanner.deploy_status == 'pending' %}bg-warning text-dark{% else %}
+                                                <tr>
+                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
+                                                </tr>
+bg-danger{% endif %}">
                                                             {{ scanner.deploy_status|title }}
                                                         </span>
                                                     </td>
@@ -312,42 +319,11 @@
                                                 </tr>
                                                 {% endfor %}
                                             {% else %}
-                                                <!-- Example row (only shown if no scanners from backend) -->
                                                 <tr>
-                                                    <td>
-                                                        <div class="d-flex align-items-center">
-                                                            <div class="client-logo me-3">AC</div>
-                                                            <div>
-                                                                <div class="fw-bold">Acme Corporation</div>
-                                                                <div class="text-muted small">acmecorp.com</div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td>Security Checker</td>
-                                                    <td>
-                                                        <a href="#" target="_blank">
-                                                            acme-corp.yourscannerdomain.com
-                                                        </a>
-                                                    </td>
-                                                    <td><span class="badge bg-success">Deployed</span></td>
-                                                    <td>May 1, 2025</td>
-                                                    <td>
-                                                        <div class="d-flex">
-                                                            <button class="client-action" data-bs-toggle="tooltip" title="View Scanner">
-                                                                <i class="bi bi-eye"></i>
-                                                            </button>
-                                                            <button class="client-action" data-bs-toggle="tooltip" title="Edit Scanner">
-                                                                <i class="bi bi-pencil"></i>
-                                                            </button>
-                                                            <button class="client-action" data-bs-toggle="tooltip" title="Scanner Stats">
-                                                                <i class="bi bi-graph-up"></i>
-                                                            </button>
-                                                            <button class="client-action" data-bs-toggle="tooltip" title="More Options">
-                                                                <i class="bi bi-three-dots-vertical"></i>
-                                                            </button>
-                                                        </div>
-                                                    </td>
+                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
                                                 </tr>
+<!-- No data placeholder -->
+                                                
                                             {% endif %}
                                         </tbody>
                                     </table>
@@ -396,12 +372,9 @@
                                                 {% endfor %}
                                             {% else %}
                                                 <tr>
-                                                    <td>Acme Corp</td>
-                                                    <td>Security Checker</td>
-                                                    <td><span class="subscription-badge subscription-pro">Pro</span></td>
-                                                    <td><span class="badge bg-success">Active</span></td>
+                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
                                                 </tr>
-                                                <tr>
+<tr>
                                                     <td>TechFlow Solutions</td>
                                                     <td>TF Security Scanner</td>
                                                     <td><span class="subscription-badge subscription-basic">Basic</span></td>
@@ -452,7 +425,10 @@
                                     </div>
                                     {% endfor %}
                                 {% else %}
-                                    <div class="activity-item">
+                                                <tr>
+                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
+                                                </tr>
+<div class="activity-item">
                                         <div class="activity-icon">
                                             <i class="bi bi-plus-circle text-success"></i>
                                         </div>
@@ -467,7 +443,7 @@
                                             <i class="bi bi-credit-card text-primary"></i>
                                         </div>
                                         <div class="activity-content">
-                                            <div><strong>Acme Corp</strong> upgraded to Pro plan</div>
+                                            <div>No recent activity</div>
                                             <div class="activity-time">5 hours ago</div>
                                         </div>
                                     </div>
@@ -666,7 +642,7 @@
                         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                         datasets: [{
                             label: 'Scans',
-                            data: [150, 210, 180, 250, 300, 320],
+                            data: [150, 210, 180, {{ item.count|default(0) }}, 300, 320],
                             borderColor: '#02054c',
                             backgroundColor: 'rgba(255, 105, 0, 0.1)',
                             tension: 0.3,

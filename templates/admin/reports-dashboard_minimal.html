@@ -59,7 +59,11 @@
                                 <p class="card-text">Period: {{ report.period }}</p>
                                 <p class="card-text">Value: {{ report.value }}</p>
                                 <p class="card-text">Status: 
-                                    <span class="badge {% if report.status == 'completed' %}bg-success{% else %}bg-warning{% endif %}">
+                                    <span class="badge {% if report.status == 'completed' %}bg-success{% else %}
+                                                <tr>
+                                                    <td colspan="10" class="text-center text-muted py-4">No data available yet</td>
+                                                </tr>
+bg-warning{% endif %}">
                                         {{ report.status }}
                                     </span>
                                 </p>
