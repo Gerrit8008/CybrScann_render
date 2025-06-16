@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subscriptions - Admin Dashboard</title>
+    <title>Lead Management - Admin Dashboard</title>
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/favicon.png.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/images/favicon.png.png">
@@ -32,13 +32,13 @@
                     <a href="/admin/scanners" class="sidebar-link">
                         <i class="bi bi-shield-check"></i> Scanner Management
                     </a>
-                    <a href="/admin/leads" class="sidebar-link">
+                    <a href="/admin/leads" class="sidebar-link active">
                         <i class="bi bi-person-plus"></i> Lead Management
                     </a>
                     <a href="/customize" class="sidebar-link">
                         <i class="bi bi-plus-circle"></i> Create Scanner
                     </a>
-                    <a href="/admin/subscriptions" class="sidebar-link active">
+                    <a href="/admin/subscriptions" class="sidebar-link">
                         <i class="bi bi-credit-card"></i> Subscriptions
                     </a>
                     <a href="/admin/reports" class="sidebar-link">
@@ -59,7 +59,7 @@
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10 ms-auto main-content">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Subscription Management</h2>
+                    <h2>Lead Management</h2>
                     <div>
                         <span class="badge bg-primary">Admin</span>
                         <span class="ms-2">{{ user.username }}</span>
@@ -78,50 +78,48 @@
                     {% endif %}
                 {% endwith %}
                 
-                <!-- Subscription Overview -->
+                <!-- Lead Overview -->
                 <div class="row g-4 mb-4">
                     <div class="col-md-3">
                         <div class="card stat-card border-0 shadow-sm">
                             <div class="card-body text-center">
-                                <div class="stat-value text-success">{{ subscriptions|length|default('0') }}</div>
-                                <h6 class="mb-0">Active Subscriptions</h6>
+                                <div class="stat-value text-success">{{ leads|length|default('0') }}</div>
+                                <h6 class="mb-0">Total Leads</h6>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="card stat-card border-0 shadow-sm">
                             <div class="card-body text-center">
-                                <div class="stat-value text-primary">${{ (subscriptions|length * 59)|default('0') }}</div>
-                                <h6 class="mb-0">Monthly Revenue</h6>
+                                <div class="stat-value text-danger">{{ leads|selectattr('lead_score', 'equalto', 'Hot')|list|length|default('0') }}</div>
+                                <h6 class="mb-0">Hot Leads</h6>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="card stat-card border-0 shadow-sm">
                             <div class="card-body text-center">
-                                <div class="stat-value text-warning">0</div>
-                                <h6 class="mb-0">Expiring Soon</h6>
+                                <div class="stat-value text-warning">{{ leads|selectattr('lead_score', 'equalto', 'Warm')|list|length|default('0') }}</div>
+                                <h6 class="mb-0">Warm Leads</h6>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="card stat-card border-0 shadow-sm">
                             <div class="card-body text-center">
-                                <div class="stat-value text-info">{{ ((subscriptions|length / 1)|round|int * 100) if subscriptions|length > 0 else 0 }}%</div>
-                                <h6 class="mb-0">Retention Rate</h6>
+                                <div class="stat-value text-info">${{ leads|sum(attribute='estimated_value')|default('0') }}</div>
+                                <h6 class="mb-0">Total Value</h6>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Subscriptions Table -->
+                <!-- Leads Table -->
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">All Subscriptions</h5>
-                            <button class="btn btn-primary btn-sm">
-                                <i class="bi bi-plus"></i> New Subscription
-                            </button>
+                            <h5 class="mb-0">All Platform Leads</h5>
+                            <span class="text-muted">Platform-wide lead summary</span>
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -130,43 +128,53 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Client</th>
-                                        <th>Plan</th>
-                                        <th>Status</th>
-                                        <th>Start Date</th>
-                                        <th>End Date</th>
-                                        <th>Revenue</th>
+                                        <th>Lead Contact</th>
+                                        <th>Company</th>
+                                        <th>Domain</th>
+                                        <th>Score</th>
+                                        <th>Industry</th>
+                                        <th>Est. Value</th>
+                                        <th>Generated</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% if subscriptions %}
-                                        {% for subscription in subscriptions %}
+                                    {% if leads %}
+                                        {% for lead in leads %}
                                         <tr>
-                                            <td>{{ subscription.client_name|default('Unknown Client') }}</td>
                                             <td>
-                                                <span class="badge bg-{{ 'success' if subscription.plan == 'premium' else 'secondary' }}">
-                                                    {{ subscription.plan|title|default('Basic') }}
-                                                </span>
+                                                <div class="fw-bold">{{ lead.client_name }}</div>
+                                                <div class="text-muted small">{{ lead.client_email }}</div>
                                             </td>
                                             <td>
-                                                <span class="badge bg-{{ 'success' if subscription.status == 'active' else 'warning' }}">
-                                                    {{ subscription.status|title|default('Active') }}
+                                                <div class="fw-bold">{{ lead.contact|default('Unknown') }}</div>
+                                                <div class="text-muted small">{{ lead.email|default('No email') }}</div>
+                                            </td>
+                                            <td>{{ lead.company|default('Unknown Company') }}</td>
+                                            <td>{{ lead.domain|default('Unknown') }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'danger' if lead.lead_score == 'Hot' else ('warning' if lead.lead_score == 'Warm' else 'info') }}">
+                                                    {{ lead.lead_score|default('Cold') }}
                                                 </span>
                                             </td>
-                                            <td>{{ subscription.start_date|default('2024-01-01') }}</td>
-                                            <td>{{ subscription.end_date|default('2024-12-31') }}</td>
-                                            <td>${{ subscription.monthly_revenue|default('99') }}/mo</td>
+                                            <td>{{ lead.industry|default('Unknown') }}</td>
+                                            <td>${{ lead.estimated_value|default('0') }}</td>
+                                            <td>{{ lead.date_generated|default('Unknown') }}</td>
                                             <td>
                                                 <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-primary">Edit</button>
-                                                    <button class="btn btn-outline-danger">Cancel</button>
+                                                    <button class="btn btn-outline-primary" title="View Details">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-info" title="Contact Lead">
+                                                        <i class="bi bi-envelope"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
                                         {% endfor %}
                                     {% else %}
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted py-4">No subscriptions yet - waiting for real users</td>
+                                            <td colspan="9" class="text-center text-muted py-4">No leads yet - waiting for real client activity</td>
                                         </tr>
                                     {% endif %}
                                 </tbody>

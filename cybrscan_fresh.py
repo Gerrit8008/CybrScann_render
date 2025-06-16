@@ -1156,6 +1156,42 @@ def admin_reports():
                          reports=real_reports,
                          detailed_metrics=detailed_metrics)
 
+@app.route('/admin/leads')
+@login_required
+def admin_leads():
+    """Admin lead management page"""
+    if current_user.role != 'admin':
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get all real leads from all clients (exclude demo leads)
+    real_leads = []
+    for lead in leads_db.values():
+        user_id = lead.get('user_id')
+        # Skip demo leads
+        if user_id == 'demo':
+            continue
+        # Skip if owner is demo by email
+        if user_id in users and (users[user_id].email == 'demo@example.com' or users[user_id].email.startswith('demo') or '@example.com' in users[user_id].email):
+            continue
+        
+        # Add client info to lead for display
+        if user_id in users:
+            lead['client_name'] = getattr(users[user_id], 'company_name', users[user_id].email)
+            lead['client_email'] = users[user_id].email
+        else:
+            lead['client_name'] = 'Unknown Client'
+            lead['client_email'] = 'Unknown'
+        
+        real_leads.append(lead)
+    
+    # Sort leads by date (newest first)
+    real_leads = sorted(real_leads, key=lambda x: x.get('date_generated', ''), reverse=True)
+    
+    return render_template('admin/leads-management.html',
+                         user=current_user,
+                         leads=real_leads)
+
 @app.route('/admin/settings')
 @login_required
 def admin_settings():
