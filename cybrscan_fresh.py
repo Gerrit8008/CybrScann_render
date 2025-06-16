@@ -528,7 +528,7 @@ def logout():
 def dashboard():
     """User dashboard - ONLY for clients"""
     # CRITICAL: Admins must NEVER see client/MSP dashboard
-    if hasattr(current_user, 'role') and current_user.role == 'admin':
+    if current_user.role == 'admin':
         # Admin detected - redirect to admin dashboard immediately
         return redirect(url_for('admin_dashboard'))
     
@@ -727,9 +727,9 @@ def client_dashboard():
 def admin_dashboard():
     """Admin dashboard - COMPLETE SUMMARY of all client dashboards"""
     # CRITICAL: Double check admin role
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+    if current_user.role != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('index'))  # Send to home, not dashboard
+        return redirect(url_for('dashboard'))
     
     # ADMIN DASHBOARD: Aggregate data from ALL client dashboards
     # This is completely separate from individual client dashboards
