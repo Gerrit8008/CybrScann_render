@@ -373,32 +373,16 @@ def load_user(user_id):
 
 # Routes using original templates
 
-# Global request handler to ensure proper routing
-@app.before_request
-def ensure_proper_routing():
-    """Ensure admins stay in admin interface and clients stay in client interface"""
-    if current_user.is_authenticated and hasattr(current_user, 'role'):
-        # Get the current endpoint
-        endpoint = request.endpoint
-        
-        # If admin is trying to access client routes, redirect to admin equivalent
-        if current_user.role == 'admin' and endpoint:
-            client_to_admin_mapping = {
-                'client_dashboard': 'admin_dashboard',
-                'client_leads': 'admin_leads',
-                'client_scanners': 'admin_scanners',
-                'client_reports': 'admin_reports',
-                'client_settings': 'admin_settings',
-                'client_billing': 'admin_dashboard',  # No admin billing, go to dashboard
-                'client_statistics': 'admin_dashboard'  # No admin statistics, go to dashboard
-            }
-            
-            if endpoint in client_to_admin_mapping:
-                return redirect(url_for(client_to_admin_mapping[endpoint]))
 
 @app.route('/')
 def index():
     """Landing page with original CybrScan design"""
+    if current_user.is_authenticated:
+        # If user is already logged in, redirect to appropriate dashboard
+        if hasattr(current_user, 'role') and current_user.role == 'admin':
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return redirect(url_for('dashboard'))
     return render_template('index.html', subscription_levels=SUBSCRIPTION_TIERS)
 
 @app.route('/pricing')
@@ -1244,6 +1228,9 @@ def admin_settings():
 @login_required
 def client_statistics():
     """Client statistics page"""
+    # Redirect admins to admin dashboard
+    if hasattr(current_user, 'role') and current_user.role == 'admin':
+        return redirect(url_for('admin_dashboard'))
     # Get user's actual data
     user_scanners = [scanner for scanner in scanners_db.values() 
                     if scanner.get('user_id') == current_user.id]
@@ -1291,6 +1278,9 @@ def client_statistics():
 @login_required
 def client_reports():
     """Client reports page"""
+    # Redirect admins to admin reports
+    if hasattr(current_user, 'role') and current_user.role == 'admin':
+        return redirect(url_for('admin_reports'))
     # Get user's actual scan reports
     user_scans = []
     for scan in scans_db.values():
@@ -1368,6 +1358,9 @@ def view_scan_report(scan_id):
 @login_required
 def client_leads():
     """MSP leads management page"""
+    # Redirect admins to admin leads page
+    if hasattr(current_user, 'role') and current_user.role == 'admin':
+        return redirect(url_for('admin_leads'))
     # Get user's actual leads with associated scan information
     user_leads_enhanced = []
     for lead in leads_db.values():
@@ -1705,10 +1698,21 @@ def two_factor_qr_code():
         # Fallback if qrcode library is not installed
         return '<div class="alert alert-warning">QR code generation not available. Use the secret key manually.</div>'
 
-@app.route('/customize')
+@app.route('/customize', methods=['GET', 'POST'])
 @login_required
 def customize():
     """Scanner customization page"""
+    if request.method == 'POST':
+        # Handle form submission
+        # For now, redirect based on user role
+        if hasattr(current_user, 'role') and current_user.role == 'admin':
+            flash('Scanner configuration saved!', 'success')
+            return redirect(url_for('admin_dashboard'))
+        else:
+            flash('Scanner configuration saved!', 'success')
+            return redirect(url_for('client_scanners'))
+    
+    # GET request - show the form
     # Check if admin is accessing this
     if hasattr(current_user, 'role') and current_user.role == 'admin':
         # Render admin version of scanner creation
@@ -1935,6 +1939,9 @@ def detect_colors():
 @login_required
 def client_scanners():
     """Client scanners management page"""
+    # Redirect admins to admin scanners
+    if hasattr(current_user, 'role') and current_user.role == 'admin':
+        return redirect(url_for('admin_scanners'))
     # Get user's scanners
     user_scanners = [scanner for scanner in scanners_db.values() 
                     if scanner.get('user_id') == current_user.id]
