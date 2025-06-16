@@ -377,12 +377,6 @@ def load_user(user_id):
 @app.route('/')
 def index():
     """Landing page with original CybrScan design"""
-    if current_user.is_authenticated:
-        # If user is already logged in, redirect to appropriate dashboard
-        if hasattr(current_user, 'role') and current_user.role == 'admin':
-            return redirect(url_for('admin_dashboard'))
-        else:
-            return redirect(url_for('dashboard'))
     return render_template('index.html', subscription_levels=SUBSCRIPTION_TIERS)
 
 @app.route('/pricing')
