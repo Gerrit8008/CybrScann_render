@@ -532,12 +532,13 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    """User dashboard"""
-    # CRITICAL: Check if admin should go to admin dashboard
+    """User dashboard - ONLY for clients"""
+    # CRITICAL: Admins must NEVER see client/MSP dashboard
     if hasattr(current_user, 'role') and current_user.role == 'admin':
+        # Admin detected - redirect to admin dashboard immediately
         return redirect(url_for('admin_dashboard'))
     
-    # This is the CLIENT/MSP portal dashboard - admins should never see this
+    # Only clients see this MSP/Lead Generation dashboard
     # Get user's scanners
     user_scanners = [scanner for scanner in scanners_db.values() 
                     if scanner.get('user_id') == current_user.id]
@@ -721,6 +722,9 @@ def dashboard():
 @login_required
 def client_dashboard():
     """Client dashboard (alternative route)"""
+    # CRITICAL: Admins should NEVER see client dashboard
+    if current_user.role == 'admin':
+        return redirect(url_for('admin_dashboard'))
     # Redirect to main dashboard
     return redirect(url_for('dashboard'))
 
@@ -728,9 +732,10 @@ def client_dashboard():
 @login_required
 def admin_dashboard():
     """Admin dashboard - COMPLETE SUMMARY of all client dashboards"""
-    if current_user.role != 'admin':
+    # CRITICAL: Double check admin role
+    if not hasattr(current_user, 'role') or current_user.role != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('index'))  # Send to home, not dashboard
     
     # ADMIN DASHBOARD: Aggregate data from ALL client dashboards
     # This is completely separate from individual client dashboards
@@ -875,10 +880,38 @@ def admin_dashboard():
             'percentage': (len(tier_clients) / max(1, total_clients)) * 100 if total_clients > 0 else 0
         }
     
+    # Get recent clients for display
+    recent_clients = []
+    for client in sorted(real_clients, key=lambda x: getattr(x, 'created_at', '2024-01-01'), reverse=True)[:5]:
+        recent_clients.append({
+            'company_name': getattr(client, 'company_name', client.username),
+            'scanner_name': 'Security Scanner',
+            'subscription': client.subscription_level,
+            'status': 'Active'
+        })
+    
+    # Get deployed scanners for display
+    deployed_scanners = []
+    for scanner in all_client_scanners[:10]:  # Show latest 10
+        owner = users.get(scanner.get('user_id'))
+        if owner:
+            deployed_scanners.append({
+                'id': scanner.get('id'),
+                'business_name': getattr(owner, 'company_name', owner.username),
+                'business_domain': getattr(owner, 'business_domain', 'unknown.com'),
+                'scanner_name': scanner.get('name', 'Security Scanner'),
+                'subdomain': scanner.get('subdomain', scanner.get('id')),
+                'deploy_status': scanner.get('status', 'deployed'),
+                'deploy_date': scanner.get('created_at', '2024-01-01')[:10],
+                'created_at': scanner.get('created_at', '2024-01-01')
+            })
+    
     return render_template('admin/admin-dashboard.html', 
                          user=current_user,
                          dashboard_stats=admin_dashboard_stats,
                          recent_activity=platform_activity,
+                         recent_clients=recent_clients,
+                         deployed_scanners=deployed_scanners,
                          subscription_breakdown=platform_subscription_breakdown,
                          subscription_levels=SUBSCRIPTION_TIERS)
 
@@ -2379,6 +2412,20 @@ def debug_scanners():
         'demo_scanners': demo_scanners,
         'real_scanner_count': len(real_scanners),
         'demo_scanner_count': len(demo_scanners)
+    })
+
+@app.route('/debug/user')
+@login_required
+def debug_user():
+    """Debug route to check current user role"""
+    return jsonify({
+        'user_id': current_user.id,
+        'username': current_user.username,
+        'email': current_user.email,
+        'role': current_user.role,
+        'has_role_attr': hasattr(current_user, 'role'),
+        'is_admin': current_user.role == 'admin' if hasattr(current_user, 'role') else False,
+        'subscription': getattr(current_user, 'subscription_level', 'none')
     })
 
 # Import database fix for admin panel
