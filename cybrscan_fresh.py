@@ -1746,13 +1746,8 @@ def customize():
             return redirect(url_for('client_scanners'))
     
     # GET request - show the form
-    # Check if admin is accessing this
-    if hasattr(current_user, 'role') and current_user.role == 'admin':
-        # Render admin version of scanner creation
-        return render_template('admin/customization-form.html', user=current_user)
-    else:
-        # Render client version
-        return render_template('client/customize_scanner_full.html', user=current_user)
+    # Use the same template for both admin and client - original functionality
+    return render_template('client/customize_scanner_full.html', user=current_user)
 
 @app.route('/scan')
 @login_required
