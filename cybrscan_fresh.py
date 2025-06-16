@@ -372,6 +372,30 @@ def load_user(user_id):
     return users.get(user_id)
 
 # Routes using original templates
+
+# Global request handler to ensure proper routing
+@app.before_request
+def ensure_proper_routing():
+    """Ensure admins stay in admin interface and clients stay in client interface"""
+    if current_user.is_authenticated and hasattr(current_user, 'role'):
+        # Get the current endpoint
+        endpoint = request.endpoint
+        
+        # If admin is trying to access client routes, redirect to admin equivalent
+        if current_user.role == 'admin' and endpoint:
+            client_to_admin_mapping = {
+                'client_dashboard': 'admin_dashboard',
+                'client_leads': 'admin_leads',
+                'client_scanners': 'admin_scanners',
+                'client_reports': 'admin_reports',
+                'client_settings': 'admin_settings',
+                'client_billing': 'admin_dashboard',  # No admin billing, go to dashboard
+                'client_statistics': 'admin_dashboard'  # No admin statistics, go to dashboard
+            }
+            
+            if endpoint in client_to_admin_mapping:
+                return redirect(url_for(client_to_admin_mapping[endpoint]))
+
 @app.route('/')
 def index():
     """Landing page with original CybrScan design"""
@@ -525,9 +549,11 @@ def logout():
 @login_required
 def dashboard():
     """User dashboard"""
-    # Check if admin should go to admin dashboard
-    if current_user.role == 'admin':
+    # CRITICAL: Check if admin should go to admin dashboard
+    if hasattr(current_user, 'role') and current_user.role == 'admin':
         return redirect(url_for('admin_dashboard'))
+    
+    # This is the CLIENT/MSP portal dashboard - admins should never see this
     # Get user's scanners
     user_scanners = [scanner for scanner in scanners_db.values() 
                     if scanner.get('user_id') == current_user.id]
@@ -1683,7 +1709,13 @@ def two_factor_qr_code():
 @login_required
 def customize():
     """Scanner customization page"""
-    return render_template('client/customize_scanner_full.html', user=current_user)
+    # Check if admin is accessing this
+    if hasattr(current_user, 'role') and current_user.role == 'admin':
+        # Render admin version of scanner creation
+        return render_template('admin/customization-form.html', user=current_user)
+    else:
+        # Render client version
+        return render_template('client/customize_scanner_full.html', user=current_user)
 
 @app.route('/scan')
 @login_required
