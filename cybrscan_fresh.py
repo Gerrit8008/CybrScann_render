@@ -1003,6 +1003,120 @@ def admin_scanners():
                          user=current_user,
                          scanners=real_scanners)
 
+@app.route('/admin/scanner/<scanner_id>/view')
+@login_required
+def admin_scanner_view(scanner_id):
+    """Admin scanner view page"""
+    if current_user.role != 'admin':
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get scanner details
+    scanner = scanners_db.get(scanner_id)
+    if not scanner:
+        flash('Scanner not found.', 'error')
+        return redirect(url_for('admin_scanners'))
+    
+    # Get scanner owner
+    owner = users.get(scanner.get('user_id'))
+    if not owner:
+        flash('Scanner owner not found.', 'error')
+        return redirect(url_for('admin_scanners'))
+    
+    # Get scanner scans
+    scanner_scans = []
+    for scan in scans_db.values():
+        if scan.get('scanner_id') == scanner_id:
+            scanner_scans.append(scan)
+    
+    # Scanner data for template
+    scanner_data = {
+        'id': scanner.get('id'),
+        'name': scanner.get('name', 'Unknown Scanner'),
+        'subdomain': scanner.get('subdomain', scanner_id),
+        'business_name': getattr(owner, 'company_name', owner.username),
+        'business_domain': getattr(owner, 'business_domain', 'unknown.com'),
+        'owner_email': owner.email,
+        'status': scanner.get('status', 'active'),
+        'created_at': scanner.get('created_at', 'Unknown'),
+        'scan_count': len(scanner_scans),
+        'theme_color': scanner.get('theme_color', '#007bff'),
+        'logo_url': scanner.get('logo_url', ''),
+        'contact_email': scanner.get('contact_email', owner.email),
+        'company_description': scanner.get('company_description', ''),
+        'privacy_policy': scanner.get('privacy_policy', ''),
+        'terms_of_service': scanner.get('terms_of_service', '')
+    }
+    
+    return render_template('admin/scanner-view.html',
+                         user=current_user,
+                         scanner=scanner_data,
+                         scans=scanner_scans,
+                         owner=owner)
+
+@app.route('/admin/scanner/<scanner_id>/edit', methods=['GET', 'POST'])
+@login_required
+def admin_scanner_edit(scanner_id):
+    """Admin scanner edit page"""
+    if current_user.role != 'admin':
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get scanner details
+    scanner = scanners_db.get(scanner_id)
+    if not scanner:
+        flash('Scanner not found.', 'error')
+        return redirect(url_for('admin_scanners'))
+    
+    # Get scanner owner
+    owner = users.get(scanner.get('user_id'))
+    if not owner:
+        flash('Scanner owner not found.', 'error')
+        return redirect(url_for('admin_scanners'))
+    
+    if request.method == 'POST':
+        # Update scanner settings
+        scanner_updates = {
+            'name': request.form.get('scanner_name', scanner.get('name')),
+            'theme_color': request.form.get('theme_color', scanner.get('theme_color')),
+            'logo_url': request.form.get('logo_url', scanner.get('logo_url')),
+            'contact_email': request.form.get('contact_email', scanner.get('contact_email')),
+            'company_description': request.form.get('company_description', scanner.get('company_description')),
+            'privacy_policy': request.form.get('privacy_policy', scanner.get('privacy_policy')),
+            'terms_of_service': request.form.get('terms_of_service', scanner.get('terms_of_service')),
+            'status': request.form.get('status', scanner.get('status'))
+        }
+        
+        # Update scanner in database
+        for key, value in scanner_updates.items():
+            scanner[key] = value
+        
+        flash('Scanner updated successfully!', 'success')
+        return redirect(url_for('admin_scanner_view', scanner_id=scanner_id))
+    
+    # Scanner data for template
+    scanner_data = {
+        'id': scanner.get('id'),
+        'name': scanner.get('name', 'Unknown Scanner'),
+        'subdomain': scanner.get('subdomain', scanner_id),
+        'business_name': getattr(owner, 'company_name', owner.username),
+        'business_domain': getattr(owner, 'business_domain', 'unknown.com'),
+        'owner_email': owner.email,
+        'status': scanner.get('status', 'active'),
+        'created_at': scanner.get('created_at', 'Unknown'),
+        'theme_color': scanner.get('theme_color', '#007bff'),
+        'logo_url': scanner.get('logo_url', ''),
+        'contact_email': scanner.get('contact_email', owner.email),
+        'company_description': scanner.get('company_description', ''),
+        'privacy_policy': scanner.get('privacy_policy', ''),
+        'terms_of_service': scanner.get('terms_of_service', '')
+    }
+    
+    return render_template('admin/scanner-edit.html',
+                         user=current_user,
+                         scanner=scanner_data,
+                         owner=owner)
+
 @app.route('/admin/clients')
 @login_required
 def admin_clients():
