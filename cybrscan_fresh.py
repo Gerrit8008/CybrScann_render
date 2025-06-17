@@ -371,6 +371,12 @@ create_demo_accounts()
 def load_user(user_id):
     return users.get(user_id)
 
+def is_admin_user(user):
+    """Verify if user is truly an admin"""
+    return (hasattr(user, 'role') and 
+            user.role == 'admin' and 
+            (user.email == 'admin@cybrscan.com' or user.username == 'admin'))
+
 # Routes using original templates
 
 
@@ -506,7 +512,7 @@ def login():
             login_user(user)
             flash('Login successful!', 'success')
             # Redirect based on user role
-            if user.role == 'admin':
+            if is_admin_user(user):
                 return redirect(url_for('admin_platform_dashboard'))
             else:
                 return redirect(url_for('dashboard'))
@@ -528,7 +534,7 @@ def logout():
 def dashboard():
     """User dashboard - ONLY for clients"""
     # CRITICAL: Admins must NEVER see client/MSP dashboard
-    if current_user.role == 'admin':
+    if is_admin_user(current_user):
         # Admin detected - redirect to admin dashboard immediately
         return redirect(url_for('admin_platform_dashboard'))
     
@@ -726,7 +732,7 @@ def client_dashboard():
 @login_required
 def admin_dashboard():
     """Redirect to separate platform dashboard"""
-    if current_user.role != 'admin':
+    if not is_admin_user(current_user):
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     return redirect(url_for('admin_platform_dashboard'))
@@ -735,8 +741,8 @@ def admin_dashboard():
 @login_required
 def admin_platform_dashboard():
     """Admin dashboard - COMPLETE SUMMARY of all client dashboards"""
-    # CRITICAL: Double check admin role
-    if current_user.role != 'admin':
+    # CRITICAL: Must be admin user
+    if not is_admin_user(current_user):
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
