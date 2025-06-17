@@ -507,7 +507,7 @@ def login():
             flash('Login successful!', 'success')
             # Redirect based on user role
             if user.role == 'admin':
-                return redirect(url_for('admin_dashboard'))
+                return redirect(url_for('admin_platform_dashboard'))
             else:
                 return redirect(url_for('dashboard'))
         else:
@@ -530,7 +530,7 @@ def dashboard():
     # CRITICAL: Admins must NEVER see client/MSP dashboard
     if current_user.role == 'admin':
         # Admin detected - redirect to admin dashboard immediately
-        return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('admin_platform_dashboard'))
     
     # Only clients see this MSP/Lead Generation dashboard
     # Get user's scanners
@@ -718,13 +718,22 @@ def client_dashboard():
     """Client dashboard (alternative route)"""
     # CRITICAL: Admins should NEVER see client dashboard
     if current_user.role == 'admin':
-        return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('admin_platform_dashboard'))
     # Redirect to main dashboard
     return redirect(url_for('dashboard'))
 
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
+    """Redirect to separate platform dashboard"""
+    if current_user.role != 'admin':
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('admin_platform_dashboard'))
+
+@app.route('/admin/dashboard/platform')
+@login_required
+def admin_platform_dashboard():
     """Admin dashboard - COMPLETE SUMMARY of all client dashboards"""
     # CRITICAL: Double check admin role
     if current_user.role != 'admin':
@@ -900,7 +909,7 @@ def admin_dashboard():
                 'created_at': scanner.get('created_at', '2024-01-01')
             })
     
-    return render_template('admin/admin-dashboard.html', 
+    return render_template('admin/platform-dashboard.html', 
                          user=current_user,
                          dashboard_stats=admin_dashboard_stats,
                          recent_activity=platform_activity,
@@ -1734,7 +1743,7 @@ def customize():
         # For now, redirect based on user role
         if hasattr(current_user, 'role') and current_user.role == 'admin':
             flash('Scanner configuration saved!', 'success')
-            return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('admin_platform_dashboard'))
         else:
             flash('Scanner configuration saved!', 'success')
             return redirect(url_for('client_scanners'))
@@ -1868,7 +1877,7 @@ def create_scanner():
             })
         else:
             # Determine redirect based on user role
-            redirect_url = '/admin/dashboard' if current_user.role == 'admin' else '/client/scanners'
+            redirect_url = '/admin/dashboard/platform' if current_user.role == 'admin' else '/client/scanners'
             
             return jsonify({
                 'status': 'success',
@@ -2085,7 +2094,7 @@ def update_scanner(scanner_id):
             })
         else:
             # Determine redirect based on user role  
-            redirect_url = '/admin/dashboard' if current_user.role == 'admin' else '/client/scanners'
+            redirect_url = '/admin/dashboard/platform' if current_user.role == 'admin' else '/client/scanners'
             
             return jsonify({
                 'status': 'success',
